@@ -577,9 +577,51 @@
 
     // === Fare rules ===
     const STARTING_FARE = 29.0;
-    const DISTANCE_INCREMENT = 200;  // meters
+    const STARTING_DISTANCE = 2000;  // meters included in starting fare
+    const DISTANCE_INCREMENT = 200;  // meters per fare tick after starting distance
     const TIME_INCREMENT = 60000;    // 1 minute in ms
     const FARE_PER_INCREMENT = 2.1;
+
+    // === LocalStorage keys ===
+    const STORAGE_KEY_RIDE = 'hktaxi_current_ride';
+    const STORAGE_KEY_LOG = 'hktaxi_fare_log'; // for future fare history
+
+    // === Persistence ===
+    function saveRide() {
+      try {
+        const elapsed = state.running
+          ? state.elapsedBeforePause + (Date.now() - state.startTime)
+          : state.elapsedBeforePause;
+        const data = {
+          fare: state.fare,
+          extras: state.extras,
+          distanceM: state.distanceM,
+          stationaryMs: state.stationaryMs,
+          distanceSinceLastTick: state.distanceSinceLastTick,
+          stationarySinceLastTick: state.stationarySinceLastTick,
+          elapsedMs: elapsed,
+          wasRunning: state.running,
+          savedAt: Date.now(),
+        };
+        localStorage.setItem(STORAGE_KEY_RIDE, JSON.stringify(data));
+      } catch (e) {
+        // Storage full or unavailable — silently ignore
+      }
+    }
+
+    function loadRide() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_RIDE);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function clearSavedRide() {
+      try { localStorage.removeItem(STORAGE_KEY_RIDE); } catch (e) {}
+    }
 
     // === DOM refs ===
     const fareDisplay = document.getElementById('fare-display');
@@ -651,8 +693,14 @@
             // Filter out GPS jitter — ignore tiny movements with low accuracy
             const accuracy = pos.coords.accuracy || 100;
             if (dist > Math.max(2, accuracy * 0.3)) {
+              const prevDistance = state.distanceM;
               state.distanceM += dist;
-              state.distanceSinceLastTick += dist;
+
+              // Only count distance beyond the starting allowance toward fare ticks
+              if (state.distanceM > STARTING_DISTANCE) {
+                const chargeableNew = dist - Math.max(0, STARTING_DISTANCE - prevDistance);
+                state.distanceSinceLastTick += chargeableNew;
+              }
               state.isMoving = true;
             } else if (speed < state.speedThreshold) {
               state.isMoving = false;
@@ -673,6 +721,7 @@
 
           updateDisplay();
           updateTimeDisplay();
+          saveRide();
         },
         (err) => {
           gpsDot.classList.remove('active');
@@ -729,6 +778,7 @@
 
         updateDisplay();
         updateTimeDisplay();
+        saveRide();
       }, 500);
     }
 
@@ -756,6 +806,7 @@
       startGPS();
       startStationaryTimer();
       updateDisplay();
+      saveRide();
     }
 
     function pauseMeter() {
@@ -766,6 +817,7 @@
       stopGPS();
       stopStationaryTimer();
       state.lastPosition = null;
+      saveRide();
     }
 
     function resetMeter() {
@@ -785,11 +837,13 @@
       extrasIndicator.classList.remove('active');
       updateDisplay();
       updateTimeDisplay();
+      clearSavedRide();
     }
 
     function addExtra(amount) {
       state.extras += amount;
       updateDisplay();
+      saveRide();
     }
 
     // === Button bindings ===
@@ -807,6 +861,29 @@
     document.getElementById('btn-add1').addEventListener('click', () => addExtra(1));
 
     // === Init ===
+    // Restore saved ride if any
+    (function restoreSavedRide() {
+      const saved = loadRide();
+      if (saved && saved.fare > 0) {
+        state.fare = saved.fare;
+        state.extras = saved.extras || 0;
+        state.distanceM = saved.distanceM || 0;
+        state.stationaryMs = saved.stationaryMs || 0;
+        state.distanceSinceLastTick = saved.distanceSinceLastTick || 0;
+        state.stationarySinceLastTick = saved.stationarySinceLastTick || 0;
+
+        // Account for time elapsed while the page was closed
+        const timeSinceSave = Date.now() - (saved.savedAt || Date.now());
+        state.elapsedBeforePause = (saved.elapsedMs || 0) + (saved.wasRunning ? timeSinceSave : 0);
+
+        // Show HIRED label since there's an active ride
+        hiredLabel.classList.add('active');
+
+        // Resume in paused state so user can review and press START
+        state.running = false;
+      }
+    })();
+
     updateDisplay();
     updateTimeDisplay();
 
