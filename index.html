@@ -183,9 +183,14 @@
       font-weight: bold;
     }
 
+    .status-row {
+      display: flex;
+      margin-top: 6px;
+    }
+
     .status-indicator {
+      flex: 1;
       text-align: center;
-      margin-top: 2px;
       height: 14px;
     }
 
@@ -282,27 +287,9 @@
       align-items: center;
     }
 
-    /* Info bar between display and buttons */
-    .info-bar {
-      margin: 0 12px;
-      padding: 4px 10px;
-      display: flex;
-      justify-content: space-between;
-      color: #555;
-      font-size: 9px;
-    }
-
-    .surcharge-label {
-      color: #777;
-      font-size: 9px;
-    }
-
     /* GPS status */
     .gps-status {
-      position: absolute;
-      top: 4px;
-      right: 14px;
-      font-size: 8px;
+      font-size: 9px;
       color: #555;
       display: flex;
       align-items: center;
@@ -447,16 +434,6 @@
         height: 8px;
       }
 
-      .info-bar {
-        margin: 0 16px;
-        padding: 4px 16px;
-        font-size: 12px;
-      }
-
-      .surcharge-label {
-        font-size: 12px;
-      }
-
       .control-panel {
         margin: 4px 16px 6px;
         padding: 10px 12px;
@@ -482,8 +459,6 @@
 
       .gps-status {
         font-size: 11px;
-        top: 6px;
-        right: 20px;
       }
 
       .gps-dot {
@@ -511,9 +486,6 @@
           </div>
           <div class="currency-label">HK$</div>
           <div class="unit-label">C(x10)</div>
-          <div class="status-indicator">
-            <span class="hired-text" id="hired-label">HIRED</span>
-          </div>
         </div>
         <div class="extras-section">
           <div class="section-label">EXTRAS</div>
@@ -529,9 +501,6 @@
           </div>
           <div class="currency-label">HK$</div>
           <div class="unit-label">C(x10)</div>
-          <div class="status-indicator">
-            <div class="extras-indicator" id="extras-indicator"></div>
-          </div>
         </div>
         <div class="brand-area">
           <div class="brand-logo">T</div>
@@ -540,14 +509,14 @@
           <div class="brand-model">C P</div>
         </div>
       </div>
-    </div>
-
-    <div class="info-bar">
-      <span class="gps-status">
-        <span class="gps-dot" id="gps-dot"></span>
-        <span id="gps-text">GPS</span>
-      </span>
-      <span class="surcharge-label">附加 $10.</span>
+      <div class="status-row">
+        <div class="status-indicator">
+          <span class="hired-text" id="hired-label">HIRED</span>
+        </div>
+        <div class="status-indicator">
+          <div class="extras-indicator" id="extras-indicator"></div>
+        </div>
+      </div>
     </div>
 
     <div class="control-panel">
@@ -574,6 +543,10 @@
     </div>
 
     <div class="debug-info">
+      <span class="gps-status">
+        <span class="gps-dot" id="gps-dot"></span>
+        <span id="gps-text">GPS</span>
+      </span>
       <span id="distance-info">0.000 km</span>
       <span id="time-info">00:00</span>
     </div>
