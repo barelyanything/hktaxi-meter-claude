@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>HK Taxi Meter</title>
+  <style>
+    @font-face {
+      font-family: 'DSEG7';
+      src: url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2') format('woff2'),
+           url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff') format('woff');
+      font-weight: bold;
+      font-style: normal;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .meter {
+      background: #111;
+      border: 3px solid #333;
+      border-radius: 8px;
+      width: 520px;
+      padding: 0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+      overflow: hidden;
+    }
+
+    /* Top display area */
+    .display-area {
+      background: #0a0a0a;
+      border: 2px solid #222;
+      margin: 12px 12px 0 12px;
+      padding: 10px 14px;
+      position: relative;
+    }
+
+    .display-row {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+    }
+
+    .fare-section, .extras-section {
+      flex: 1;
+      position: relative;
+      border: 1.5px solid #555;
+      padding: 8px 10px 6px;
+    }
+
+    .fare-section {
+      border-right: 1.5px solid #555;
+    }
+
+    .extras-section {
+      border-left: none;
+    }
+
+    .section-label {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0a0a0a;
+      padding: 0 8px;
+      color: #ccc;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .brand-area {
+      width: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 6px;
+      color: #888;
+      font-size: 8px;
+      line-height: 1.3;
+      text-align: center;
+    }
+
+    .brand-area .brand-logo {
+      font-size: 10px;
+      font-weight: bold;
+      color: #aaa;
+      border: 1px solid #888;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2px;
+    }
+
+    .brand-area .brand-name {
+      font-weight: bold;
+      font-size: 9px;
+      color: #aaa;
+    }
+
+    .brand-area .brand-model {
+      font-size: 8px;
+      color: #777;
+    }
+
+    .digit-display {
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-end;
+      min-height: 48px;
+      position: relative;
+    }
+
+    .seven-seg {
+      font-family: 'DSEG7', monospace;
+      font-size: 42px;
+      color: #ff1a1a;
+      text-shadow: 0 0 12px rgba(255, 20, 20, 0.6), 0 0 24px rgba(255, 20, 20, 0.3);
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+
+    .seven-seg-bg {
+      font-family: 'DSEG7', monospace;
+      font-size: 42px;
+      color: rgba(255, 20, 20, 0.07);
+      letter-spacing: 2px;
+      line-height: 1;
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .currency-label {
+      position: absolute;
+      bottom: 2px;
+      left: 4px;
+      color: #ccc;
+      font-size: 9px;
+      font-weight: bold;
+    }
+
+    .unit-label {
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      color: #ccc;
+      font-size: 9px;
+    }
+
+    .status-indicator {
+      text-align: center;
+      margin-top: 2px;
+      height: 14px;
+    }
+
+    .hired-text {
+      font-size: 10px;
+      font-weight: bold;
+      color: #ff1a1a;
+      text-shadow: 0 0 6px rgba(255, 20, 20, 0.5);
+      letter-spacing: 2px;
+      visibility: hidden;
+    }
+
+    .hired-text.active {
+      visibility: visible;
+    }
+
+    .extras-indicator {
+      width: 10px;
+      height: 6px;
+      background: #332200;
+      margin: 4px auto 0;
+      border-radius: 1px;
+    }
+
+    .extras-indicator.active {
+      background: #ffaa00;
+      box-shadow: 0 0 6px rgba(255, 170, 0, 0.6);
+    }
+
+    /* Bottom control panel */
+    .control-panel {
+      background: #1a1a1a;
+      border-top: 2px solid #222;
+      margin: 8px 12px 12px;
+      padding: 10px 8px;
+      display: flex;
+      gap: 0;
+      justify-content: center;
+      align-items: flex-end;
+      position: relative;
+    }
+
+    .control-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 10px;
+      right: 10px;
+      height: 1px;
+      background: #333;
+    }
+
+    .meter-btn {
+      width: 52px;
+      height: 28px;
+      border: 1px solid #222;
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+      margin: 0 6px;
+      outline: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+      transition: transform 0.05s, box-shadow 0.05s;
+    }
+
+    .meter-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .btn-red {
+      background: linear-gradient(180deg, #cc3333 0%, #991111 100%);
+    }
+
+    .btn-yellow {
+      background: linear-gradient(180deg, #ccaa33 0%, #998811 100%);
+    }
+
+    .btn-orange {
+      background: linear-gradient(180deg, #cc7733 0%, #995511 100%);
+    }
+
+    .btn-label {
+      font-size: 7px;
+      color: #999;
+      text-align: center;
+      margin-top: 3px;
+      white-space: nowrap;
+    }
+
+    .btn-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Info bar between display and buttons */
+    .info-bar {
+      margin: 0 12px;
+      padding: 4px 10px;
+      display: flex;
+      justify-content: space-between;
+      color: #555;
+      font-size: 9px;
+    }
+
+    .surcharge-label {
+      color: #777;
+      font-size: 9px;
+    }
+
+    /* GPS status */
+    .gps-status {
+      position: absolute;
+      top: 4px;
+      right: 14px;
+      font-size: 8px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .gps-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #333;
+    }
+
+    .gps-dot.active {
+      background: #00cc44;
+      box-shadow: 0 0 4px rgba(0, 204, 68, 0.5);
+    }
+
+    .gps-dot.error {
+      background: #cc3333;
+    }
+
+    /* Distance info at bottom */
+    .debug-info {
+      margin: 0 12px 8px;
+      padding: 4px 8px;
+      font-size: 9px;
+      color: #444;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 560px) {
+      .meter {
+        width: 100vw;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+      }
+      .seven-seg, .seven-seg-bg {
+        font-size: 34px;
+      }
+      .brand-area {
+        width: 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="meter">
+    <div class="display-area">
+      <div class="display-row">
+        <div class="fare-section">
+          <div class="section-label">F A R E</div>
+          <div class="digit-display">
+            <span class="seven-seg-bg">888.8</span>
+            <span class="seven-seg" id="fare-display">0.0</span>
+          </div>
+          <div class="currency-label">HK$</div>
+          <div class="unit-label">C(x10)</div>
+          <div class="status-indicator">
+            <span class="hired-text" id="hired-label">HIRED</span>
+          </div>
+        </div>
+        <div class="extras-section">
+          <div class="section-label">EXTRAS</div>
+          <div class="digit-display">
+            <span class="seven-seg-bg">888.8</span>
+            <span class="seven-seg" id="extras-display">0.0</span>
+          </div>
+          <div class="currency-label">HK$</div>
+          <div class="unit-label">C(x10)</div>
+          <div class="status-indicator">
+            <div class="extras-indicator" id="extras-indicator"></div>
+          </div>
+        </div>
+        <div class="brand-area">
+          <div class="brand-logo">T</div>
+          <div class="brand-name">TAKERY</div>
+          <div class="brand-model">TKR 787</div>
+          <div class="brand-model">C P</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-bar">
+      <span class="gps-status">
+        <span class="gps-dot" id="gps-dot"></span>
+        <span id="gps-text">GPS</span>
+      </span>
+      <span class="surcharge-label">附加 $10.</span>
+    </div>
+
+    <div class="control-panel">
+      <div class="btn-wrapper">
+        <button class="meter-btn btn-red" id="btn-start" title="Start / Pause"></button>
+        <div class="btn-label">START</div>
+      </div>
+      <div class="btn-wrapper">
+        <button class="meter-btn btn-orange" id="btn-reset" title="Reset"></button>
+        <div class="btn-label">RESET</div>
+      </div>
+      <div class="btn-wrapper">
+        <button class="meter-btn btn-yellow" id="btn-pause" title="Pause"></button>
+        <div class="btn-label">PAUSE</div>
+      </div>
+      <div class="btn-wrapper">
+        <button class="meter-btn btn-yellow" id="btn-add10" title="Add $10 Extra"></button>
+        <div class="btn-label">+$10</div>
+      </div>
+      <div class="btn-wrapper">
+        <button class="meter-btn btn-yellow" id="btn-add1" title="Add $1 Extra"></button>
+        <div class="btn-label">+$1</div>
+      </div>
+    </div>
+
+    <div class="debug-info">
+      <span id="distance-info">0.000 km</span>
+      <span id="time-info">00:00</span>
+    </div>
+  </div>
+
+  <script>
+    // === State ===
+    const state = {
+      running: false,
+      fare: 0,        // in HK$ (cents precision internally)
+      extras: 0,       // in HK$
+      distanceM: 0,    // meters traveled
+      stationaryMs: 0, // milliseconds stationary
+      distanceSinceLastTick: 0, // meters since last fare increment
+      stationarySinceLastTick: 0, // ms since last stationary tick
+      lastPosition: null,
+      lastTimestamp: null,
+      watchId: null,
+      timerInterval: null,
+      startTime: null,
+      elapsedBeforePause: 0,
+      gpsAvailable: false,
+      isMoving: false,
+      speedThreshold: 0.5, // m/s — below this we consider stationary
+    };
+
+    // === Fare rules ===
+    const STARTING_FARE = 29.0;
+    const DISTANCE_INCREMENT = 200;  // meters
+    const TIME_INCREMENT = 60000;    // 1 minute in ms
+    const FARE_PER_INCREMENT = 2.1;
+
+    // === DOM refs ===
+    const fareDisplay = document.getElementById('fare-display');
+    const extrasDisplay = document.getElementById('extras-display');
+    const hiredLabel = document.getElementById('hired-label');
+    const extrasIndicator = document.getElementById('extras-indicator');
+    const gpsDot = document.getElementById('gps-dot');
+    const gpsText = document.getElementById('gps-text');
+    const distanceInfo = document.getElementById('distance-info');
+    const timeInfo = document.getElementById('time-info');
+
+    // === Display formatting ===
+    function formatFare(amount) {
+      // Show as XXX.X format — the last digit is 10-cent units
+      const rounded = Math.round(amount * 10) / 10;
+      if (rounded >= 1000) {
+        return rounded.toFixed(1);
+      }
+      return rounded.toFixed(1);
+    }
+
+    function updateDisplay() {
+      fareDisplay.textContent = formatFare(state.fare);
+      extrasDisplay.textContent = formatFare(state.extras);
+
+      if (state.extras > 0) {
+        extrasIndicator.classList.add('active');
+      } else {
+        extrasIndicator.classList.remove('active');
+      }
+    }
+
+    function updateTimeDisplay() {
+      const elapsed = state.running
+        ? state.elapsedBeforePause + (Date.now() - state.startTime)
+        : state.elapsedBeforePause;
+      const totalSec = Math.floor(elapsed / 1000);
+      const min = Math.floor(totalSec / 60).toString().padStart(2, '0');
+      const sec = (totalSec % 60).toString().padStart(2, '0');
+      timeInfo.textContent = `${min}:${sec}`;
+      distanceInfo.textContent = (state.distanceM / 1000).toFixed(3) + ' km';
+    }
+
+    // === GPS ===
+    function startGPS() {
+      if (!navigator.geolocation) {
+        gpsText.textContent = 'No GPS';
+        gpsDot.classList.add('error');
+        return;
+      }
+
+      state.watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          gpsDot.classList.add('active');
+          gpsDot.classList.remove('error');
+          state.gpsAvailable = true;
+
+          if (!state.running) return;
+
+          const now = Date.now();
+          const speed = pos.coords.speed !== null ? pos.coords.speed : 0;
+
+          if (state.lastPosition) {
+            const dist = haversine(
+              state.lastPosition.lat, state.lastPosition.lng,
+              pos.coords.latitude, pos.coords.longitude
+            );
+
+            // Filter out GPS jitter — ignore tiny movements with low accuracy
+            const accuracy = pos.coords.accuracy || 100;
+            if (dist > Math.max(2, accuracy * 0.3)) {
+              state.distanceM += dist;
+              state.distanceSinceLastTick += dist;
+              state.isMoving = true;
+            } else if (speed < state.speedThreshold) {
+              state.isMoving = false;
+            }
+          }
+
+          state.lastPosition = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          };
+          state.lastTimestamp = now;
+
+          // Check distance-based fare
+          while (state.distanceSinceLastTick >= DISTANCE_INCREMENT) {
+            state.fare += FARE_PER_INCREMENT;
+            state.distanceSinceLastTick -= DISTANCE_INCREMENT;
+          }
+
+          updateDisplay();
+          updateTimeDisplay();
+        },
+        (err) => {
+          gpsDot.classList.remove('active');
+          gpsDot.classList.add('error');
+          gpsText.textContent = 'GPS err';
+          console.warn('GPS error:', err.message);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 1000,
+          timeout: 5000,
+        }
+      );
+    }
+
+    function stopGPS() {
+      if (state.watchId !== null) {
+        navigator.geolocation.clearWatch(state.watchId);
+        state.watchId = null;
+      }
+    }
+
+    // === Haversine distance (meters) ===
+    function haversine(lat1, lng1, lat2, lng2) {
+      const R = 6371000;
+      const toRad = (d) => d * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat/2)**2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLng/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    // === Stationary timer ===
+    function startStationaryTimer() {
+      let lastCheck = Date.now();
+      state.timerInterval = setInterval(() => {
+        if (!state.running) return;
+        const now = Date.now();
+        const dt = now - lastCheck;
+        lastCheck = now;
+
+        // If not moving, accumulate stationary time
+        if (!state.isMoving) {
+          state.stationaryMs += dt;
+          state.stationarySinceLastTick += dt;
+
+          while (state.stationarySinceLastTick >= TIME_INCREMENT) {
+            state.fare += FARE_PER_INCREMENT;
+            state.stationarySinceLastTick -= TIME_INCREMENT;
+          }
+        }
+
+        updateDisplay();
+        updateTimeDisplay();
+      }, 500);
+    }
+
+    function stopStationaryTimer() {
+      if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+      }
+    }
+
+    // === Controls ===
+    function startMeter() {
+      if (state.running) return;
+      state.running = true;
+
+      // If fresh start (fare is 0), set starting fare
+      if (state.fare === 0) {
+        state.fare = STARTING_FARE;
+      }
+
+      state.startTime = Date.now();
+      state.isMoving = false;
+      hiredLabel.classList.add('active');
+
+      startGPS();
+      startStationaryTimer();
+      updateDisplay();
+    }
+
+    function pauseMeter() {
+      if (!state.running) return;
+      state.running = false;
+      state.elapsedBeforePause += (Date.now() - state.startTime);
+
+      stopGPS();
+      stopStationaryTimer();
+      state.lastPosition = null;
+    }
+
+    function resetMeter() {
+      pauseMeter();
+      state.fare = 0;
+      state.extras = 0;
+      state.distanceM = 0;
+      state.stationaryMs = 0;
+      state.distanceSinceLastTick = 0;
+      state.stationarySinceLastTick = 0;
+      state.elapsedBeforePause = 0;
+      state.lastPosition = null;
+      state.lastTimestamp = null;
+      state.isMoving = false;
+
+      hiredLabel.classList.remove('active');
+      extrasIndicator.classList.remove('active');
+      updateDisplay();
+      updateTimeDisplay();
+    }
+
+    function addExtra(amount) {
+      state.extras += amount;
+      updateDisplay();
+    }
+
+    // === Button bindings ===
+    document.getElementById('btn-start').addEventListener('click', () => {
+      if (state.running) {
+        pauseMeter();
+      } else {
+        startMeter();
+      }
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', resetMeter);
+    document.getElementById('btn-pause').addEventListener('click', pauseMeter);
+    document.getElementById('btn-add10').addEventListener('click', () => addExtra(10));
+    document.getElementById('btn-add1').addEventListener('click', () => addExtra(1));
+
+    // === Init ===
+    updateDisplay();
+    updateTimeDisplay();
+
+    // Attempt initial GPS check
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => {
+          gpsDot.classList.add('active');
+          state.gpsAvailable = true;
+        },
+        () => {
+          gpsDot.classList.add('error');
+          gpsText.textContent = 'GPS N/A';
+        },
+        { timeout: 3000 }
+      );
+    }
+  </script>
+</body>
+</html>
