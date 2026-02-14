@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#111111">
+  <link rel="manifest" href="manifest.json">
   <title>HK Taxi Meter</title>
   <style>
     @font-face {
@@ -80,6 +84,7 @@
       font-weight: bold;
       letter-spacing: 3px;
       text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .brand-area {
@@ -121,32 +126,27 @@
     }
 
     .digit-display {
-      display: flex;
-      align-items: baseline;
-      justify-content: flex-end;
-      min-height: 48px;
       position: relative;
+      min-height: 48px;
     }
 
-    .seven-seg {
+    .seven-seg, .seven-seg-bg {
       font-family: 'DSEG7', monospace;
       font-size: 42px;
-      color: #ff1a1a;
-      text-shadow: 0 0 12px rgba(255, 20, 20, 0.6), 0 0 24px rgba(255, 20, 20, 0.3);
-      letter-spacing: 2px;
-      line-height: 1;
-    }
-
-    .seven-seg-bg {
-      font-family: 'DSEG7', monospace;
-      font-size: 42px;
-      color: rgba(255, 20, 20, 0.07);
       letter-spacing: 2px;
       line-height: 1;
       position: absolute;
       right: 0;
-      top: 50%;
-      transform: translateY(-50%);
+      bottom: 0;
+    }
+
+    .seven-seg {
+      color: #ff1a1a;
+      text-shadow: 0 0 12px rgba(255, 20, 20, 0.6), 0 0 24px rgba(255, 20, 20, 0.3);
+    }
+
+    .seven-seg-bg {
+      color: rgba(255, 20, 20, 0.07);
     }
 
     .currency-label {
@@ -318,7 +318,8 @@
       justify-content: space-between;
     }
 
-    @media (max-width: 560px) {
+    /* Portrait phone */
+    @media (max-width: 560px) and (orientation: portrait) {
       .meter {
         width: 100vw;
         border-radius: 0;
@@ -330,6 +331,101 @@
       }
       .brand-area {
         width: 60px;
+      }
+    }
+
+    /* Landscape phone — full bleed, no chrome */
+    @media (max-height: 500px) and (orientation: landscape) {
+      html, body {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        align-items: stretch;
+      }
+
+      .meter {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      .display-area {
+        margin: 4px 10px 0;
+        padding: 8px 12px;
+        flex: 1;
+        display: flex;
+        align-items: center;
+      }
+
+      .display-row {
+        width: 100%;
+      }
+
+      .fare-section, .extras-section {
+        padding: 6px 10px 4px;
+      }
+
+      .seven-seg, .seven-seg-bg {
+        font-size: clamp(32px, 8vw, 52px);
+      }
+
+      .digit-display {
+        min-height: clamp(32px, 8vw, 52px);
+      }
+
+      .brand-area {
+        width: 70px;
+      }
+
+      .info-bar {
+        margin: 0 10px;
+        padding: 2px 10px;
+      }
+
+      .control-panel {
+        margin: 2px 10px 4px;
+        padding: 6px 8px;
+      }
+
+      .meter-btn {
+        width: 60px;
+        height: 32px;
+        margin: 0 8px;
+      }
+
+      .debug-info {
+        margin: 0 10px 4px;
+        padding: 2px 8px;
+      }
+
+      .status-indicator {
+        height: 10px;
+        margin-top: 1px;
+      }
+
+      .hired-text {
+        font-size: 8px;
+      }
+
+      .section-label {
+        font-size: 9px;
+        top: -7px;
+      }
+
+      .currency-label, .unit-label {
+        font-size: 8px;
       }
     }
   </style>
