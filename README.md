@@ -82,6 +82,15 @@ For the best experience on a phone:
 
 > GPS features require HTTPS in production, or `localhost` / `file://` for development.
 
+## Roadmap
+
+See [TODO.md](TODO.md) for details.
+
+- [ ] Print receipt (generate a PNG)
+- [ ] Local storage for current ride
+- [ ] Fare record / ride history
+- [ ] Switch between Urban / New Territories / Lantau taxi fare modes
+
 ## License
 
 MIT
