@@ -124,16 +124,19 @@
     .digit-display {
       position: relative;
       min-height: 48px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
     }
 
-    .decimal-sep {
-      position: absolute;
-      right: 32px;
-      top: 2px;
-      bottom: 2px;
-      width: 0;
-      border-right: 1.5px solid #555;
-      z-index: 1;
+    .digit-main, .digit-decimal {
+      position: relative;
+    }
+
+    .digit-decimal {
+      border-left: 1.5px solid #555;
+      margin-left: 1px;
+      padding-left: 1px;
     }
 
     .seven-seg, .seven-seg-bg {
@@ -141,6 +144,9 @@
       font-size: 42px;
       letter-spacing: 2px;
       line-height: 1;
+    }
+
+    .digit-main .seven-seg-bg, .digit-decimal .seven-seg-bg {
       position: absolute;
       right: 0;
       bottom: 0;
@@ -340,9 +346,6 @@
       .seven-seg, .seven-seg-bg {
         font-size: 34px;
       }
-      .decimal-sep {
-        right: 26px;
-      }
       .brand-area {
         width: 60px;
       }
@@ -392,10 +395,6 @@
         font-size: clamp(48px, 12vw, 80px);
       }
 
-      .digit-display {
-        min-height: clamp(48px, 12vw, 80px);
-      }
-
       .section-label {
         font-size: 14px;
         letter-spacing: 4px;
@@ -413,10 +412,6 @@
         font-size: 14px;
         bottom: -9px;
         right: 10px;
-      }
-
-      .decimal-sep {
-        right: 52px;
       }
 
       .brand-area {
@@ -505,9 +500,14 @@
         <div class="fare-section">
           <div class="section-label">F A R E</div>
           <div class="digit-display">
-            <div class="decimal-sep"></div>
-            <span class="seven-seg-bg">888.8</span>
-            <span class="seven-seg" id="fare-display">0.0</span>
+            <div class="digit-main">
+              <span class="seven-seg-bg">888.</span>
+              <span class="seven-seg" id="fare-main">0.</span>
+            </div>
+            <div class="digit-decimal">
+              <span class="seven-seg-bg">8</span>
+              <span class="seven-seg" id="fare-dec">0</span>
+            </div>
           </div>
           <div class="currency-label">HK$</div>
           <div class="unit-label">C(x10)</div>
@@ -518,9 +518,14 @@
         <div class="extras-section">
           <div class="section-label">EXTRAS</div>
           <div class="digit-display">
-            <div class="decimal-sep"></div>
-            <span class="seven-seg-bg">888.8</span>
-            <span class="seven-seg" id="extras-display">0.0</span>
+            <div class="digit-main">
+              <span class="seven-seg-bg">888.</span>
+              <span class="seven-seg" id="extras-main">0.</span>
+            </div>
+            <div class="digit-decimal">
+              <span class="seven-seg-bg">8</span>
+              <span class="seven-seg" id="extras-dec">0</span>
+            </div>
           </div>
           <div class="currency-label">HK$</div>
           <div class="unit-label">C(x10)</div>
@@ -644,8 +649,10 @@
     }
 
     // === DOM refs ===
-    const fareDisplay = document.getElementById('fare-display');
-    const extrasDisplay = document.getElementById('extras-display');
+    const fareMain = document.getElementById('fare-main');
+    const fareDec = document.getElementById('fare-dec');
+    const extrasMain = document.getElementById('extras-main');
+    const extrasDec = document.getElementById('extras-dec');
     const hiredLabel = document.getElementById('hired-label');
     const extrasIndicator = document.getElementById('extras-indicator');
     const gpsDot = document.getElementById('gps-dot');
@@ -655,17 +662,22 @@
 
     // === Display formatting ===
     function formatFare(amount) {
-      // Show as XXX.X format — the last digit is 10-cent units
       const rounded = Math.round(amount * 10) / 10;
-      if (rounded >= 1000) {
-        return rounded.toFixed(1);
-      }
-      return rounded.toFixed(1);
+      const str = rounded.toFixed(1);
+      const dotIdx = str.indexOf('.');
+      return {
+        main: str.substring(0, dotIdx + 1),  // e.g. "29."
+        dec: str.substring(dotIdx + 1),       // e.g. "0"
+      };
     }
 
     function updateDisplay() {
-      fareDisplay.textContent = formatFare(state.fare);
-      extrasDisplay.textContent = formatFare(state.extras);
+      const fare = formatFare(state.fare);
+      fareMain.textContent = fare.main;
+      fareDec.textContent = fare.dec;
+      const extras = formatFare(state.extras);
+      extrasMain.textContent = extras.main;
+      extrasDec.textContent = extras.dec;
 
       if (state.extras > 0) {
         extrasIndicator.classList.add('active');
