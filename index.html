@@ -577,7 +577,8 @@
 
     // === Fare rules ===
     const STARTING_FARE = 29.0;
-    const DISTANCE_INCREMENT = 200;  // meters
+    const STARTING_DISTANCE = 2000;  // meters included in starting fare
+    const DISTANCE_INCREMENT = 200;  // meters per fare tick after starting distance
     const TIME_INCREMENT = 60000;    // 1 minute in ms
     const FARE_PER_INCREMENT = 2.1;
 
@@ -692,8 +693,14 @@
             // Filter out GPS jitter — ignore tiny movements with low accuracy
             const accuracy = pos.coords.accuracy || 100;
             if (dist > Math.max(2, accuracy * 0.3)) {
+              const prevDistance = state.distanceM;
               state.distanceM += dist;
-              state.distanceSinceLastTick += dist;
+
+              // Only count distance beyond the starting allowance toward fare ticks
+              if (state.distanceM > STARTING_DISTANCE) {
+                const chargeableNew = dist - Math.max(0, STARTING_DISTANCE - prevDistance);
+                state.distanceSinceLastTick += chargeableNew;
+              }
               state.isMoving = true;
             } else if (speed < state.speedThreshold) {
               state.isMoving = false;
