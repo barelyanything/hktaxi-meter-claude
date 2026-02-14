@@ -1,7 +1,8 @@
 {
   "name": "HK Taxi Meter",
   "short_name": "Taxi Meter",
-  "start_url": "/",
+  "start_url": "/hktaxi-meter-claude/",
+  "scope": "/hktaxi-meter-claude/",
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#111111",
