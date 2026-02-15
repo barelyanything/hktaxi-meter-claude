@@ -84,7 +84,7 @@
     }
 
     .brand-area {
-      width: 80px;
+      padding-left: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -334,7 +334,6 @@
         font-size: 32px;
       }
       .brand-area {
-        width: 60px;
       }
     }
 
@@ -402,7 +401,6 @@
       }
 
       .brand-area {
-        width: 100px;
         font-size: 10px;
       }
 
@@ -503,10 +501,10 @@
           <div class="unit-label">C(x10)</div>
         </div>
         <div class="brand-area">
-          <div class="brand-logo">T</div>
-          <div class="brand-name">TAKERY</div>
-          <div class="brand-model">TKR 787</div>
-          <div class="brand-model">C P</div>
+          <div class="brand-logo">D</div>
+          <div class="brand-name">DLLM</div>
+          <div class="brand-model">DLM 667</div>
+          <div class="brand-model">P K</div>
         </div>
       </div>
       <div class="status-row">
@@ -521,18 +519,22 @@
 
     <div class="control-panel">
       <div class="btn-wrapper">
-        <button class="meter-btn btn-red" id="btn-start" title="Start / Pause"></button>
-        <div class="btn-label">START</div>
+        <button class="meter-btn btn-red" id="btn-forhire" title="For Hire"></button>
+        <div class="btn-label">FOR HIRE</div>
       </div>
       <div class="btn-wrapper">
-        <button class="meter-btn btn-orange" id="btn-reset" title="Reset"></button>
-        <div class="btn-label">RESET</div>
+        <button class="meter-btn btn-yellow" id="btn-hired" title="Hired"></button>
+        <div class="btn-label">HIRED</div>
       </div>
       <div class="btn-wrapper">
         <button class="meter-btn btn-yellow" id="btn-pause" title="Pause"></button>
         <div class="btn-label">PAUSE</div>
       </div>
       <div class="btn-wrapper">
+        <button class="meter-btn btn-yellow" id="btn-lang" title="Language"></button>
+        <div class="btn-label">LANG</div>
+      </div>
+      <div class="btn-wrapper" style="margin-left: 16px;">
         <button class="meter-btn btn-yellow" id="btn-add10" title="Add $10 Extra"></button>
         <div class="btn-label">+$10</div>
       </div>
@@ -556,6 +558,7 @@
     // === State ===
     const state = {
       running: false,
+      paused: false,   // true when trip is paused (not reset)
       fare: 0,        // in HK$ (cents precision internally)
       extras: 0,       // in HK$
       distanceM: 0,    // meters traveled
@@ -798,6 +801,7 @@
     function startMeter() {
       if (state.running) return;
       state.running = true;
+      state.paused = false;
 
       // If fresh start (fare is 0), set starting fare
       if (state.fare === 0) {
@@ -817,6 +821,7 @@
     function pauseMeter() {
       if (!state.running) return;
       state.running = false;
+      state.paused = true;
       state.elapsedBeforePause += (Date.now() - state.startTime);
 
       stopGPS();
@@ -826,7 +831,15 @@
     }
 
     function resetMeter() {
-      pauseMeter();
+      // Stop everything first
+      if (state.running) {
+        state.running = false;
+        stopGPS();
+        stopStationaryTimer();
+        state.lastPosition = null;
+      }
+
+      state.paused = false;
       state.fare = 0;
       state.extras = 0;
       state.distanceM = 0;
@@ -852,16 +865,24 @@
     }
 
     // === Button bindings ===
-    document.getElementById('btn-start').addEventListener('click', () => {
-      if (state.running) {
-        pauseMeter();
-      } else {
+    // "For Hire" — only resets when paused
+    document.getElementById('btn-forhire').addEventListener('click', () => {
+      if (state.paused) {
+        resetMeter();
+      }
+    });
+
+    // "Hired" — starts the meter or resumes from pause
+    document.getElementById('btn-hired').addEventListener('click', () => {
+      if (!state.running) {
         startMeter();
       }
     });
 
-    document.getElementById('btn-reset').addEventListener('click', resetMeter);
     document.getElementById('btn-pause').addEventListener('click', pauseMeter);
+    document.getElementById('btn-lang').addEventListener('click', () => {
+      // Language button — to be defined later
+    });
     document.getElementById('btn-add10').addEventListener('click', () => addExtra(10));
     document.getElementById('btn-add1').addEventListener('click', () => addExtra(1));
 
@@ -884,8 +905,9 @@
         // Show HIRED label since there's an active ride
         hiredLabel.classList.add('active');
 
-        // Resume in paused state so user can review and press START
+        // Resume in paused state so user can review and press HIRED
         state.running = false;
+        state.paused = true;
       }
     })();
 
