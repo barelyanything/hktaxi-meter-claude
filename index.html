@@ -554,6 +554,13 @@
   </div>
 
   <script>
+    // === Beep ===
+    const beepSound = new Audio('beep.mp3');
+    function beep() {
+      beepSound.currentTime = 0;
+      beepSound.play();
+    }
+
     // === State ===
     const state = {
       running: false,
@@ -866,6 +873,7 @@
     // === Button bindings ===
     // "For Hire" — only resets when paused
     document.getElementById('btn-forhire').addEventListener('click', () => {
+      beep();
       if (state.paused) {
         resetMeter();
       }
@@ -873,19 +881,22 @@
 
     // "Hired" — starts the meter or resumes from pause
     document.getElementById('btn-hired').addEventListener('click', () => {
+      beep();
       if (!state.running) {
         startMeter();
       }
     });
 
     document.getElementById('btn-pause').addEventListener('click', () => {
+      beep();
       pauseMeter();
     });
     document.getElementById('btn-lang').addEventListener('click', () => {
+      beep();
       // Language button — to be defined later
     });
-    document.getElementById('btn-add10').addEventListener('click', () => { addExtra(10); });
-    document.getElementById('btn-add1').addEventListener('click', () => { addExtra(1); });
+    document.getElementById('btn-add10').addEventListener('click', () => { beep(); addExtra(10); });
+    document.getElementById('btn-add1').addEventListener('click', () => { beep(); addExtra(1); });
 
     // === Init ===
     // Restore saved ride if any
