@@ -84,12 +84,11 @@
     }
 
     .brand-area {
-      padding-left: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 4px 6px;
+      padding: 4px 6px 4px 20px;
       color: #888;
       font-size: 8px;
       line-height: 1.3;
@@ -277,7 +276,7 @@
       font-size: 7px;
       color: #999;
       text-align: center;
-      margin-top: 3px;
+      margin-bottom: 3px;
       white-space: nowrap;
     }
 
@@ -446,7 +445,7 @@
 
       .btn-label {
         font-size: 10px;
-        margin-top: 4px;
+        margin-bottom: 4px;
       }
 
       .debug-info {
@@ -519,28 +518,28 @@
 
     <div class="control-panel">
       <div class="btn-wrapper">
+        <div class="btn-label">空</div>
         <button class="meter-btn btn-red" id="btn-forhire" title="For Hire"></button>
-        <div class="btn-label">FOR HIRE</div>
       </div>
       <div class="btn-wrapper">
+        <div class="btn-label">往</div>
         <button class="meter-btn btn-yellow" id="btn-hired" title="Hired"></button>
-        <div class="btn-label">HIRED</div>
       </div>
       <div class="btn-wrapper">
+        <div class="btn-label">停/講/印</div>
         <button class="meter-btn btn-yellow" id="btn-pause" title="Pause"></button>
-        <div class="btn-label">PAUSE</div>
       </div>
       <div class="btn-wrapper">
+        <div class="btn-label">語</div>
         <button class="meter-btn btn-yellow" id="btn-lang" title="Language"></button>
-        <div class="btn-label">LANG</div>
       </div>
       <div class="btn-wrapper" style="margin-left: 16px;">
+        <div class="btn-label">附加 $10.</div>
         <button class="meter-btn btn-yellow" id="btn-add10" title="Add $10 Extra"></button>
-        <div class="btn-label">+$10</div>
       </div>
       <div class="btn-wrapper">
+        <div class="btn-label">$1.</div>
         <button class="meter-btn btn-yellow" id="btn-add1" title="Add $1 Extra"></button>
-        <div class="btn-label">+$1</div>
       </div>
     </div>
 
@@ -555,6 +554,20 @@
   </div>
 
   <script>
+    // === Beep ===
+    function beep() {
+      var context = new (window.AudioContext || window.webkitAudioContext)();
+      var oscillator = context.createOscillator();
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(440, context.currentTime);
+      oscillator.connect(context.destination);
+      oscillator.start();
+      setTimeout(function() {
+        oscillator.stop();
+        context.close();
+      }, 100);
+    }
+
     // === State ===
     const state = {
       running: false,
@@ -867,6 +880,7 @@
     // === Button bindings ===
     // "For Hire" — only resets when paused
     document.getElementById('btn-forhire').addEventListener('click', () => {
+      beep();
       if (state.paused) {
         resetMeter();
       }
@@ -874,17 +888,22 @@
 
     // "Hired" — starts the meter or resumes from pause
     document.getElementById('btn-hired').addEventListener('click', () => {
+      beep();
       if (!state.running) {
         startMeter();
       }
     });
 
-    document.getElementById('btn-pause').addEventListener('click', pauseMeter);
+    document.getElementById('btn-pause').addEventListener('click', () => {
+      beep();
+      pauseMeter();
+    });
     document.getElementById('btn-lang').addEventListener('click', () => {
+      beep();
       // Language button — to be defined later
     });
-    document.getElementById('btn-add10').addEventListener('click', () => addExtra(10));
-    document.getElementById('btn-add1').addEventListener('click', () => addExtra(1));
+    document.getElementById('btn-add10').addEventListener('click', () => { beep(); addExtra(10); });
+    document.getElementById('btn-add1').addEventListener('click', () => { beep(); addExtra(1); });
 
     // === Init ===
     // Restore saved ride if any
