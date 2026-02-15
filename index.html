@@ -47,7 +47,7 @@
       background: #0a0a0a;
       border: 2px solid #222;
       margin: 12px 12px 0 12px;
-      padding: 10px 14px;
+      padding: 10px 14px 0;
       position: relative;
     }
 
@@ -184,7 +184,7 @@
 
     .status-row {
       display: flex;
-      margin-top: 6px;
+      margin: 6px 0;
       justify-content: center;
       align-items: center;
       padding: 0 8px;
@@ -203,17 +203,16 @@
     .status-text {
       font-family: 'Arial Narrow', 'Helvetica Neue', sans-serif;
       font-stretch: condensed;
-      font-size: 10px;
+      font-size: 12px;
       font-weight: bold;
-      color: #331111;
-      text-shadow: none;
+      color: transparent;
       text-transform: uppercase;
       letter-spacing: 0;
     }
 
     .status-text.active {
       color: #ff1a1a;
-      text-shadow: 0 0 6px rgba(255, 20, 20, 0.5);
+      text-shadow: 0 0 12px rgba(255, 20, 20, 0.6), 0 0 24px rgba(255, 20, 20, 0.3);
     }
 
     .extras-indicator {
@@ -372,11 +371,6 @@
         padding-right: env(safe-area-inset-right);
         padding-top: env(safe-area-inset-top);
         padding-bottom: env(safe-area-inset-bottom);
-      }
-
-      .display-area {
-        margin: 8px 16px 0;
-        padding: 14px 20px;
       }
 
       .display-row {
