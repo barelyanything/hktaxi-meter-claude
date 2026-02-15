@@ -215,14 +215,14 @@
       text-shadow: 0 0 12px rgba(255, 20, 20, 0.6), 0 0 24px rgba(255, 20, 20, 0.3);
     }
 
-    .extras-indicator {
+    .mileage-indicator {
       width: 20px;
       height: 10px;
       background: #332200;
       border-radius: 1px;
     }
 
-    .extras-indicator.active {
+    .mileage-indicator.active {
       background: #ffaa00;
       box-shadow: 0 0 6px rgba(255, 170, 0, 0.6);
     }
@@ -429,10 +429,10 @@
       }
 
       .status-text {
-        font-size: 12px;
+        font-size: 16px;
       }
 
-      .extras-indicator {
+      .mileage-indicator {
         width: 28px;
         height: 14px;
       }
@@ -451,10 +451,10 @@
       }
 
       .btn-label {
-        font-size: 10px;
+        font-size: 16px;
         margin-bottom: 4px;
-        height: 14px;
-        line-height: 14px;
+        height: 18px;
+        line-height: 18px;
       }
 
       .debug-info {
@@ -520,7 +520,7 @@
         <div class="status-cell"><span class="status-text" id="status-hired">HIRED</span></div>
         <div class="status-cell"><span class="status-text" id="status-stop">STOP</span></div>
         <div class="status-cell"></div>
-        <div class="status-cell" style="margin-left: 16px;"><div class="extras-indicator" id="extras-indicator"></div></div>
+        <div class="status-cell" style="margin-left: 16px;"><div class="mileage-indicator" id="mileage-indicator"></div></div>
         <div class="status-cell"></div>
       </div>
     </div>
@@ -565,9 +565,24 @@
   <script>
     // === Beep ===
     const beepSound = new Audio('beep.mp3');
+    beepSound.volume = 0.5;
     function beep() {
       beepSound.currentTime = 0;
       beepSound.play();
+    }
+
+    // === Mileage indicator blink ===
+    function blinkMileageIndicator() {
+      const el = document.getElementById('mileage-indicator');
+      el.classList.remove('active');
+      setTimeout(() => {
+        if (state.running) el.classList.add('active');
+      }, 200);
+    }
+
+    function onFareTick() {
+      beep();
+      blinkMileageIndicator();
     }
 
     // === State ===
@@ -644,7 +659,7 @@
     const fareDec = document.getElementById('fare-dec');
     const extrasMain = document.getElementById('extras-main');
     const extrasDec = document.getElementById('extras-dec');
-    const extrasIndicator = document.getElementById('extras-indicator');
+    const mileageIndicator = document.getElementById('mileage-indicator');
     const statusVacant = document.getElementById('status-vacant');
     const statusHired = document.getElementById('status-hired');
     const statusStop = document.getElementById('status-stop');
@@ -711,11 +726,7 @@
         }
       }
 
-      if (state.extras > 0) {
-        extrasIndicator.classList.add('active');
-      } else {
-        extrasIndicator.classList.remove('active');
-      }
+      mileageIndicator.classList.toggle('active', state.running);
 
       updateStatusIndicators();
     }
@@ -783,6 +794,7 @@
           while (state.distanceSinceLastTick >= DISTANCE_INCREMENT) {
             state.fare += FARE_PER_INCREMENT;
             state.distanceSinceLastTick -= DISTANCE_INCREMENT;
+            onFareTick();
           }
 
           updateDisplay();
@@ -839,6 +851,7 @@
           while (state.stationarySinceLastTick >= TIME_INCREMENT) {
             state.fare += FARE_PER_INCREMENT;
             state.stationarySinceLastTick -= TIME_INCREMENT;
+            onFareTick();
           }
         }
 
@@ -912,7 +925,6 @@
       state.isMoving = false;
 
       // status updated via updateStatusIndicators()
-      extrasIndicator.classList.remove('active');
       updateStatusIndicators();
       updateDisplay();
       updateTimeDisplay();
