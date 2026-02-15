@@ -207,8 +207,8 @@
     }
 
     .extras-indicator {
-      width: 10px;
-      height: 6px;
+      width: 20px;
+      height: 10px;
       background: #332200;
       margin: 4px auto 0;
       border-radius: 1px;
@@ -217,6 +217,22 @@
     .extras-indicator.active {
       background: #ffaa00;
       box-shadow: 0 0 6px rgba(255, 170, 0, 0.6);
+    }
+
+    .btn-status {
+      font-size: 8px;
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+      letter-spacing: 1px;
+      height: 12px;
+      line-height: 12px;
+      margin-bottom: 1px;
+    }
+
+    .btn-status.active {
+      color: #ff1a1a;
+      text-shadow: 0 0 6px rgba(255, 20, 20, 0.5);
     }
 
     /* Bottom control panel */
@@ -427,8 +443,14 @@
       }
 
       .extras-indicator {
-        width: 14px;
-        height: 8px;
+        width: 28px;
+        height: 14px;
+      }
+
+      .btn-status {
+        font-size: 10px;
+        height: 14px;
+        line-height: 14px;
       }
 
       .control-panel {
@@ -518,14 +540,17 @@
 
     <div class="control-panel">
       <div class="btn-wrapper">
+        <div class="btn-status" id="status-vacant">VACANT</div>
         <div class="btn-label">空</div>
         <button class="meter-btn btn-red" id="btn-forhire" title="For Hire"></button>
       </div>
       <div class="btn-wrapper">
+        <div class="btn-status" id="status-hired">HIRED</div>
         <div class="btn-label">往</div>
         <button class="meter-btn btn-yellow" id="btn-hired" title="Hired"></button>
       </div>
       <div class="btn-wrapper">
+        <div class="btn-status" id="status-stop">STOP</div>
         <div class="btn-label">停/講/印</div>
         <button class="meter-btn btn-yellow" id="btn-pause" title="Pause"></button>
       </div>
@@ -637,6 +662,9 @@
     const extrasDec = document.getElementById('extras-dec');
     const hiredLabel = document.getElementById('hired-label');
     const extrasIndicator = document.getElementById('extras-indicator');
+    const statusVacant = document.getElementById('status-vacant');
+    const statusHired = document.getElementById('status-hired');
+    const statusStop = document.getElementById('status-stop');
     const gpsDot = document.getElementById('gps-dot');
     const gpsText = document.getElementById('gps-text');
     const distanceInfo = document.getElementById('distance-info');
@@ -653,19 +681,46 @@
       };
     }
 
+    function updateStatusIndicators() {
+      const isVacant = !state.running && !state.paused;
+      const isHired = state.running;
+      const isStop = !state.running && state.paused;
+
+      statusVacant.classList.toggle('active', isVacant);
+      statusHired.classList.toggle('active', isHired);
+      statusStop.classList.toggle('active', isStop);
+    }
+
     function updateDisplay() {
-      const fare = formatFare(state.fare);
-      fareMain.textContent = fare.main;
-      fareDec.textContent = fare.dec;
-      const extras = formatFare(state.extras);
-      extrasMain.textContent = extras.main;
-      extrasDec.textContent = extras.dec;
+      const isVacant = !state.running && !state.paused;
+
+      if (isVacant && state.fare === 0) {
+        // Blank out displays when vacant
+        fareMain.textContent = '';
+        fareDec.textContent = '';
+        extrasMain.textContent = '';
+        extrasDec.textContent = '';
+      } else {
+        const fare = formatFare(state.fare);
+        fareMain.textContent = fare.main;
+        fareDec.textContent = fare.dec;
+        if (state.extras === 0 && !state.running) {
+          extrasMain.textContent = '';
+          extrasDec.textContent = '';
+        } else {
+          const extras = formatFare(state.extras);
+          extrasMain.textContent = extras.main;
+          extrasDec.textContent = extras.dec;
+        }
+      }
 
       if (state.extras > 0) {
         extrasIndicator.classList.add('active');
       } else {
         extrasIndicator.classList.remove('active');
       }
+
+      updateStatusIndicators();
     }
 
     function updateTimeDisplay() {
@@ -817,6 +872,7 @@
       state.startTime = Date.now();
       state.isMoving = false;
       hiredLabel.classList.add('active');
+      updateStatusIndicators();
 
       startGPS();
       startStationaryTimer();
@@ -833,6 +889,7 @@
       stopGPS();
       stopStationaryTimer();
       state.lastPosition = null;
+      updateStatusIndicators();
       saveRide();
     }
 
@@ -859,6 +916,7 @@
 
       hiredLabel.classList.remove('active');
       extrasIndicator.classList.remove('active');
+      updateStatusIndicators();
       updateDisplay();
       updateTimeDisplay();
       clearSavedRide();
@@ -889,14 +947,69 @@
 
     document.getElementById('btn-pause').addEventListener('click', () => {
       beep();
-      pauseMeter();
+      if (state.paused && state.extras > 0) {
+        // Already stopped — merge extras into fare and clear extras
+        state.fare += state.extras;
+        state.extras = 0;
+        updateDisplay();
+        saveRide();
+      } else {
+        pauseMeter();
+      }
     });
     document.getElementById('btn-lang').addEventListener('click', () => {
       beep();
       // Language button — to be defined later
     });
-    document.getElementById('btn-add10').addEventListener('click', () => { beep(); addExtra(10); });
-    document.getElementById('btn-add1').addEventListener('click', () => { beep(); addExtra(1); });
+    // Hold-to-subtract logic for extras buttons
+    function setupExtrasButton(btnId, amount) {
+      const btn = document.getElementById(btnId);
+      let holdTimer = null;
+      let held = false;
+
+      function onDown(e) {
+        e.preventDefault();
+        held = false;
+        holdTimer = setTimeout(() => {
+          held = true;
+          if (state.extras > 0) {
+            beep();
+            state.extras = Math.max(0, state.extras - amount);
+            updateDisplay();
+            saveRide();
+          }
+        }, 500);
+      }
+
+      function onUp(e) {
+        e.preventDefault();
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+          holdTimer = null;
+        }
+        if (!held) {
+          beep();
+          addExtra(amount);
+        }
+      }
+
+      function onCancel() {
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+          holdTimer = null;
+        }
+      }
+
+      btn.addEventListener('mousedown', onDown);
+      btn.addEventListener('mouseup', onUp);
+      btn.addEventListener('mouseleave', onCancel);
+      btn.addEventListener('touchstart', onDown, { passive: false });
+      btn.addEventListener('touchend', onUp, { passive: false });
+      btn.addEventListener('touchcancel', onCancel);
+    }
+
+    setupExtrasButton('btn-add10', 10);
+    setupExtrasButton('btn-add1', 1);
 
     // === Init ===
     // Restore saved ride if any
@@ -925,6 +1038,7 @@
 
     updateDisplay();
     updateTimeDisplay();
+    updateStatusIndicators();
 
     // Attempt initial GPS check
     if (navigator.geolocation) {
