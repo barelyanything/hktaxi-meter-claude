@@ -193,17 +193,18 @@
       height: 14px;
     }
 
-    .hired-text {
+    .status-text {
       font-size: 10px;
       font-weight: bold;
-      color: #ff1a1a;
-      text-shadow: 0 0 6px rgba(255, 20, 20, 0.5);
+      color: #331111;
+      text-shadow: none;
       letter-spacing: 2px;
-      visibility: hidden;
+      visibility: visible;
     }
 
-    .hired-text.active {
-      visibility: visible;
+    .status-text.active {
+      color: #ff1a1a;
+      text-shadow: 0 0 6px rgba(255, 20, 20, 0.5);
     }
 
     .extras-indicator {
@@ -217,22 +218,6 @@
     .extras-indicator.active {
       background: #ffaa00;
       box-shadow: 0 0 6px rgba(255, 170, 0, 0.6);
-    }
-
-    .btn-status {
-      font-size: 8px;
-      font-weight: bold;
-      color: #333;
-      text-align: center;
-      letter-spacing: 1px;
-      height: 12px;
-      line-height: 12px;
-      margin-bottom: 1px;
-    }
-
-    .btn-status.active {
-      color: #ff1a1a;
-      text-shadow: 0 0 6px rgba(255, 20, 20, 0.5);
     }
 
     /* Bottom control panel */
@@ -438,19 +423,13 @@
         margin-top: 2px;
       }
 
-      .hired-text {
+      .status-text {
         font-size: 12px;
       }
 
       .extras-indicator {
         width: 28px;
         height: 14px;
-      }
-
-      .btn-status {
-        font-size: 10px;
-        height: 14px;
-        line-height: 14px;
       }
 
       .control-panel {
@@ -530,7 +509,9 @@
       </div>
       <div class="status-row">
         <div class="status-indicator">
-          <span class="hired-text" id="hired-label">HIRED</span>
+          <span class="status-text" id="status-vacant">VACANT</span>
+          <span class="status-text" id="status-hired">HIRED</span>
+          <span class="status-text" id="status-stop">STOP</span>
         </div>
         <div class="status-indicator">
           <div class="extras-indicator" id="extras-indicator"></div>
@@ -540,17 +521,14 @@
 
     <div class="control-panel">
       <div class="btn-wrapper">
-        <div class="btn-status" id="status-vacant">VACANT</div>
         <div class="btn-label">空</div>
         <button class="meter-btn btn-red" id="btn-forhire" title="For Hire"></button>
       </div>
       <div class="btn-wrapper">
-        <div class="btn-status" id="status-hired">HIRED</div>
         <div class="btn-label">往</div>
         <button class="meter-btn btn-yellow" id="btn-hired" title="Hired"></button>
       </div>
       <div class="btn-wrapper">
-        <div class="btn-status" id="status-stop">STOP</div>
         <div class="btn-label">停/講/印</div>
         <button class="meter-btn btn-yellow" id="btn-pause" title="Pause"></button>
       </div>
@@ -660,7 +638,6 @@
     const fareDec = document.getElementById('fare-dec');
     const extrasMain = document.getElementById('extras-main');
     const extrasDec = document.getElementById('extras-dec');
-    const hiredLabel = document.getElementById('hired-label');
     const extrasIndicator = document.getElementById('extras-indicator');
     const statusVacant = document.getElementById('status-vacant');
     const statusHired = document.getElementById('status-hired');
@@ -691,26 +668,40 @@
       statusStop.classList.toggle('active', isStop);
     }
 
+    function setDigitVisibility(el, visible) {
+      el.style.visibility = visible ? 'visible' : 'hidden';
+    }
+
     function updateDisplay() {
       const isVacant = !state.running && !state.paused;
 
       if (isVacant && state.fare === 0) {
-        // Blank out displays when vacant
-        fareMain.textContent = '';
-        fareDec.textContent = '';
-        extrasMain.textContent = '';
-        extrasDec.textContent = '';
+        // Hide digits when vacant (keep layout via seven-seg text)
+        fareMain.textContent = '0.';
+        fareDec.textContent = '0';
+        setDigitVisibility(fareMain, false);
+        setDigitVisibility(fareDec, false);
+        extrasMain.textContent = '0.';
+        extrasDec.textContent = '0';
+        setDigitVisibility(extrasMain, false);
+        setDigitVisibility(extrasDec, false);
       } else {
         const fare = formatFare(state.fare);
         fareMain.textContent = fare.main;
         fareDec.textContent = fare.dec;
+        setDigitVisibility(fareMain, true);
+        setDigitVisibility(fareDec, true);
         if (state.extras === 0 && !state.running) {
-          extrasMain.textContent = '';
-          extrasDec.textContent = '';
+          extrasMain.textContent = '0.';
+          extrasDec.textContent = '0';
+          setDigitVisibility(extrasMain, false);
+          setDigitVisibility(extrasDec, false);
         } else {
           const extras = formatFare(state.extras);
           extrasMain.textContent = extras.main;
           extrasDec.textContent = extras.dec;
+          setDigitVisibility(extrasMain, true);
+          setDigitVisibility(extrasDec, true);
         }
       }
 
@@ -871,7 +862,7 @@
 
       state.startTime = Date.now();
       state.isMoving = false;
-      hiredLabel.classList.add('active');
+      // status updated via updateStatusIndicators()
       updateStatusIndicators();
 
       startGPS();
@@ -914,7 +905,7 @@
       state.lastTimestamp = null;
       state.isMoving = false;
 
-      hiredLabel.classList.remove('active');
+      // status updated via updateStatusIndicators()
       extrasIndicator.classList.remove('active');
       updateStatusIndicators();
       updateDisplay();
@@ -1028,7 +1019,7 @@
         state.elapsedBeforePause = (saved.elapsedMs || 0) + (saved.wasRunning ? timeSinceSave : 0);
 
         // Show HIRED label since there's an active ride
-        hiredLabel.classList.add('active');
+        // status updated via updateStatusIndicators()
 
         // Resume in paused state so user can review and press HIRED
         state.running = false;
