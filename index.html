@@ -490,7 +490,7 @@
 
     /* Paper track sits ABOVE the printer, clipped */
     .printer-paper-track {
-      width: 214px;
+      width: 250px;
       position: relative;
       z-index: 1;
       overflow: hidden;
@@ -566,7 +566,7 @@
 
     /* Printer body — realistic thermal printer */
     .printer-body {
-      width: 280px;
+      width: 300px;
       height: 100px;
       background: linear-gradient(180deg, #333 0%, #222 30%, #1a1a1a 70%, #151515 100%);
       border-radius: 16px 16px 12px 12px;
@@ -600,7 +600,7 @@
     }
 
     .printer-slot {
-      width: 224px;
+      width: 258px;
       height: 5px;
       background: #000;
       border-radius: 2px;
@@ -682,7 +682,7 @@
     .receipt-final {
       background: #f5f0e8;
       padding: 20px 14px;
-      max-width: 320px;
+      max-width: 360px;
       width: 100%;
       font-family: 'Courier New', 'Courier', monospace;
       font-size: 12px;
@@ -720,9 +720,9 @@
 
     /* Responsive: portrait phone */
     @media (max-width: 560px) and (orientation: portrait) {
-      .printer-body { width: 240px; height: 90px; }
-      .printer-slot { width: 190px; }
-      .printer-paper-track { width: 182px; }
+      .printer-body { width: 270px; height: 90px; }
+      .printer-slot { width: 232px; }
+      .printer-paper-track { width: 224px; }
       .receipt-content { font-size: 10px; }
       .printer-overlay { padding-bottom: 30px; }
     }
@@ -1271,49 +1271,36 @@
       }
     });
 
-    // Pause button: click = pause/merge/speak, long-press while paused = print
+    // Pause button: click = pause/merge, double-click = speak, triple-click = print
     (function() {
       const btnPause = document.getElementById('btn-pause');
-      let pauseBtnLastClick = 0;
-      let holdTimer = null;
-      let wasHeld = false;
-
-      function onDown(e) {
-        wasHeld = false;
-        if (state.paused) {
-          holdTimer = setTimeout(() => {
-            wasHeld = true;
-            beep();
-            showPrintOverlay();
-          }, 500);
-        }
-      }
-
-      function cancelHold() {
-        if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-      }
-
-      btnPause.addEventListener('mousedown', onDown);
-      btnPause.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(e); }, { passive: false });
-      btnPause.addEventListener('mouseup', cancelHold);
-      btnPause.addEventListener('touchend', (e) => { e.preventDefault(); cancelHold(); }, { passive: false });
-      btnPause.addEventListener('mouseleave', cancelHold);
-      btnPause.addEventListener('touchcancel', cancelHold);
+      let clickTimes = [];
 
       btnPause.addEventListener('click', () => {
-        if (wasHeld) { wasHeld = false; return; }
         beep();
         const now = Date.now();
-        const isDoubleClick = (now - pauseBtnLastClick) < 400;
-        pauseBtnLastClick = now;
+        // Keep only clicks within 500ms window
+        clickTimes = clickTimes.filter(t => now - t < 500);
+        clickTimes.push(now);
 
-        if (state.paused && isDoubleClick) {
+        if (state.paused && clickTimes.length >= 3) {
+          // Triple-click while stopped — print receipt
+          clickTimes = [];
+          showPrintOverlay();
+        } else if (state.paused && clickTimes.length === 2) {
+          // Double-click while stopped — announce fare
           speakFare();
-        } else if (state.paused && state.extras > 0) {
-          state.fare += state.extras;
-          state.extras = 0;
-          updateDisplay();
-          saveRide();
+        } else if (state.paused && clickTimes.length === 1 && state.extras > 0) {
+          // Single click while stopped — merge extras
+          setTimeout(() => {
+            // Only merge if no further clicks came
+            if (clickTimes.length === 1) {
+              state.fare += state.extras;
+              state.extras = 0;
+              updateDisplay();
+              saveRide();
+            }
+          }, 500);
         } else if (!state.paused) {
           pauseMeter();
         }
@@ -1441,49 +1428,71 @@
       );
     }
     // === Receipt Printer ===
+    function cjkWidth(str) {
+      let w = 0;
+      for (const ch of str) {
+        w += ch.charCodeAt(0) > 0x7F ? 2 : 1;
+      }
+      return w;
+    }
+
+    function centerLine(text, width) {
+      const tw = cjkWidth(text);
+      const pad = Math.max(0, Math.floor((width - tw) / 2));
+      return ' '.repeat(pad) + text;
+    }
+
+    function receiptLine(cn, en, val, width, engCol) {
+      const cnW = cjkWidth(cn);
+      const enGap = ' '.repeat(Math.max(1, engCol - cnW));
+      const left = cn + enGap + en;
+      const leftW = cjkWidth(left);
+      const valW = cjkWidth(val);
+      const rightGap = ' '.repeat(Math.max(1, width - leftW - valW));
+      return left + rightGap + val;
+    }
+
     function generateReceiptText() {
       const total = Math.round((state.fare + state.extras) * 10) / 10;
       const elapsed = state.elapsedBeforePause;
-      const totalSec = Math.floor(elapsed / 1000);
-      const min = Math.floor(totalSec / 60);
-      const sec = totalSec % 60;
       const distKm = (state.distanceM / 1000).toFixed(2);
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('en-GB', {
-        day: '2-digit', month: '2-digit', year: 'numeric'
-      });
-      const timeStr = now.toLocaleTimeString('en-GB', {
-        hour: '2-digit', minute: '2-digit'
-      });
+      const paidKm = Math.max(0, (state.distanceM - STARTING_DISTANCE) / 1000).toFixed(2);
+      const paidMin = (state.stationaryMs / 60000).toFixed(2);
 
-      const meterFare = Math.max(0, state.fare - STARTING_FARE);
+      const pad2 = n => n.toString().padStart(2, '0');
+      const fmtDT = d => pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+
+      const endTime = new Date();
+      const startTime = new Date(endTime.getTime() - elapsed);
+
+      const W = 34;
+      const EC = 9; // English column start
+      const rl = (cn, en, val) => receiptLine(cn, en, val, W, EC);
+
+      const div = '='.repeat(W);
+      const dash = '-'.repeat(W);
 
       const lines = [
-        '================================',
-        '      HK TAXI RECEIPT',
-        '================================',
+        div,
+        centerLine('的士收據', W),
+        centerLine('TAXI RECEIPT', W),
+        div,
+        rl('車牌', 'TAXI NO.', 'DL9667'),
+        dash,
+        rl('上車', 'Start', fmtDT(startTime)),
+        rl('下車', 'END', fmtDT(endTime)),
+        dash,
+        rl('總公里', 'TOTAL KM', distKm),
+        rl('收費公里', 'PAID KM', paidKm),
+        rl('收費分鐘', 'PAID MIN', paidMin),
+        dash,
+        rl('附加費', 'SURCHARGE', 'HK$' + state.extras.toFixed(2)),
+        rl('總車費', 'TOTAL FARE', 'HK$' + total.toFixed(2)),
+        div,
         '',
-        '  DLLM Meter    DLM 667 P K',
-        '  License: HK-TAXI-SIM',
-        '',
-        '  Date: ' + dateStr,
-        '  Time: ' + timeStr,
-        '',
-        '--------------------------------',
-        '  Starting Fare:   $' + STARTING_FARE.toFixed(1).padStart(7),
-        '  Metered Fare:    $' + meterFare.toFixed(1).padStart(7),
-        '  Extras:          $' + state.extras.toFixed(1).padStart(7),
-        '--------------------------------',
-        '  TOTAL:           $' + total.toFixed(1).padStart(7),
-        '================================',
-        '',
-        '  Distance:  ' + distKm + ' km',
-        '  Duration:  ' + min + 'm ' + sec.toString().padStart(2, '0') + 's',
-        '',
-        '--------------------------------',
-        '     Thank you for riding!',
-        '        ~ DLLM Meters ~',
-        '================================',
+        centerLine('多謝乘搭', W),
+        centerLine('Thank you', W),
+        div,
       ];
 
       return lines.join('\n');
