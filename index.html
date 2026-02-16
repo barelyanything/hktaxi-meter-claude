@@ -215,14 +215,6 @@
       text-shadow: 0 0 12px rgba(255, 20, 20, 0.6), 0 0 24px rgba(255, 20, 20, 0.3);
     }
 
-    .status-cell-lang {
-      position: relative;
-    }
-
-    .status-lang {
-      position: absolute;
-    }
-
     .mileage-indicator {
       width: 20px;
       height: 10px;
@@ -471,6 +463,269 @@
         height: 7px;
       }
     }
+    /* === Receipt Printer Overlay === */
+    .printer-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 60px;
+    }
+    .printer-overlay.hidden { display: none; }
+
+    .printer-overlay-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+    }
+
+    .printer-scene {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Paper track sits ABOVE the printer, clipped */
+    .printer-paper-track {
+      width: 214px;
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      max-height: 0;
+    }
+
+    .printer-paper-track.printing {
+      animation: paper-feed 3s ease-out forwards;
+    }
+
+    @keyframes paper-feed {
+      from { max-height: 0; }
+      to   { max-height: 650px; }
+    }
+
+    .receipt-paper {
+      background: #f5f0e8;
+      width: 100%;
+      padding: 0;
+      position: relative;
+      cursor: grab;
+    }
+
+    .receipt-paper:active { cursor: grabbing; }
+
+    .receipt-content {
+      font-family: 'Courier New', 'Courier', monospace;
+      font-size: 11px;
+      line-height: 1.55;
+      color: #222;
+      white-space: pre;
+      padding: 14px 10px 8px;
+    }
+
+    .receipt-tear-edge {
+      height: 10px;
+      width: 100%;
+      background: #f5f0e8;
+      clip-path: polygon(
+        0% 0%, 2.5% 100%, 5% 0%, 7.5% 100%, 10% 0%, 12.5% 100%,
+        15% 0%, 17.5% 100%, 20% 0%, 22.5% 100%, 25% 0%, 27.5% 100%,
+        30% 0%, 32.5% 100%, 35% 0%, 37.5% 100%, 40% 0%, 42.5% 100%,
+        45% 0%, 47.5% 100%, 50% 0%, 52.5% 100%, 55% 0%, 57.5% 100%,
+        60% 0%, 62.5% 100%, 65% 0%, 67.5% 100%, 70% 0%, 72.5% 100%,
+        75% 0%, 77.5% 100%, 80% 0%, 82.5% 100%, 85% 0%, 87.5% 100%,
+        90% 0%, 92.5% 100%, 95% 0%, 97.5% 100%, 100% 0%
+      );
+    }
+
+    .receipt-tear-hint {
+      text-align: center;
+      color: #999;
+      font-size: 11px;
+      margin-top: 16px;
+      position: relative;
+      z-index: 3;
+      animation: hint-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes hint-pulse {
+      0%, 100% { opacity: 0.5; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-4px); }
+    }
+
+    .receipt-paper.tearing {
+      animation: tear-away 0.4s ease-in forwards;
+    }
+
+    @keyframes tear-away {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-150px) rotate(-4deg); opacity: 0; }
+    }
+
+    /* Printer body — realistic thermal printer */
+    .printer-body {
+      width: 280px;
+      height: 100px;
+      background: linear-gradient(180deg, #333 0%, #222 30%, #1a1a1a 70%, #151515 100%);
+      border-radius: 16px 16px 12px 12px;
+      position: relative;
+      z-index: 2;
+      box-shadow:
+        0 6px 24px rgba(0,0,0,0.7),
+        0 2px 6px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.1),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .printer-top-edge {
+      width: 100%;
+      height: 8px;
+      background: linear-gradient(180deg, #444 0%, #333 100%);
+      border-radius: 16px 16px 0 0;
+    }
+
+    .printer-face {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      position: relative;
+    }
+
+    .printer-slot {
+      width: 224px;
+      height: 5px;
+      background: #000;
+      border-radius: 2px;
+      position: absolute;
+      top: -2px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .printer-logo {
+      font-size: 12px;
+      font-weight: bold;
+      color: #555;
+      border: 1.5px solid #555;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .printer-brand {
+      font-size: 8px;
+      color: #444;
+      font-weight: bold;
+      margin-top: 2px;
+      letter-spacing: 2px;
+    }
+
+    .printer-led {
+      position: absolute;
+      top: 14px;
+      right: 24px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #00cc44;
+      box-shadow: 0 0 6px rgba(0,204,68,0.6);
+      animation: led-blink 1s ease-in-out infinite;
+    }
+
+    @keyframes led-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .printer-close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 1001;
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 28px;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* === Receipt Full View === */
+    .receipt-view {
+      position: fixed;
+      inset: 0;
+      z-index: 1002;
+      background: rgba(0,0,0,0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .receipt-view.hidden { display: none; }
+
+    .receipt-final {
+      background: #f5f0e8;
+      padding: 20px 14px;
+      max-width: 320px;
+      width: 100%;
+      font-family: 'Courier New', 'Courier', monospace;
+      font-size: 12px;
+      line-height: 1.55;
+      color: #222;
+      white-space: pre;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .receipt-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .receipt-action-btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #cc3333;
+      color: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .receipt-action-btn.secondary {
+      background: #444;
+      color: #ccc;
+    }
+
+    /* Responsive: portrait phone */
+    @media (max-width: 560px) and (orientation: portrait) {
+      .printer-body { width: 240px; height: 90px; }
+      .printer-slot { width: 190px; }
+      .printer-paper-track { width: 182px; }
+      .receipt-content { font-size: 10px; }
+      .printer-overlay { padding-bottom: 30px; }
+    }
   </style>
 </head>
 <body>
@@ -561,6 +816,40 @@
     </div>
   </div>
 
+  <!-- Printer Overlay -->
+  <div id="printer-overlay" class="printer-overlay hidden">
+    <div class="printer-overlay-backdrop"></div>
+    <div class="printer-scene">
+      <div class="printer-paper-track">
+        <div id="receipt-paper" class="receipt-paper">
+          <div id="receipt-content" class="receipt-content"></div>
+          <div class="receipt-tear-edge"></div>
+        </div>
+      </div>
+      <div class="printer-body">
+        <div class="printer-top-edge"></div>
+        <div class="printer-face">
+          <div class="printer-slot"></div>
+          <div class="printer-logo">D</div>
+          <div class="printer-brand">DLLM</div>
+          <div class="printer-led"></div>
+        </div>
+      </div>
+      <div class="receipt-tear-hint" id="tear-hint" style="display:none;">&#8593; Swipe up to tear receipt</div>
+    </div>
+    <button id="printer-close" class="printer-close-btn">&times;</button>
+  </div>
+
+  <!-- Full-screen receipt view (after tear) -->
+  <div id="receipt-view" class="receipt-view hidden">
+    <div id="receipt-final" class="receipt-final"></div>
+    <div class="receipt-actions">
+      <button id="btn-save-receipt" class="receipt-action-btn">Save Image</button>
+      <button id="btn-close-receipt" class="receipt-action-btn secondary">Close</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
     // === Beep ===
     const beepSound = new Audio('beep.mp3');
@@ -982,26 +1271,54 @@
       }
     });
 
-    let pauseBtnLastClick = 0;
-    document.getElementById('btn-pause').addEventListener('click', () => {
-      beep();
-      const now = Date.now();
-      const isDoubleClick = (now - pauseBtnLastClick) < 400;
-      pauseBtnLastClick = now;
+    // Pause button: click = pause/merge/speak, long-press while paused = print
+    (function() {
+      const btnPause = document.getElementById('btn-pause');
+      let pauseBtnLastClick = 0;
+      let holdTimer = null;
+      let wasHeld = false;
 
-      if (state.paused && isDoubleClick) {
-        // Double-click while stopped — announce fare
-        speakFare();
-      } else if (state.paused && state.extras > 0) {
-        // Already stopped — merge extras into fare and clear extras
-        state.fare += state.extras;
-        state.extras = 0;
-        updateDisplay();
-        saveRide();
-      } else if (!state.paused) {
-        pauseMeter();
+      function onDown(e) {
+        wasHeld = false;
+        if (state.paused) {
+          holdTimer = setTimeout(() => {
+            wasHeld = true;
+            beep();
+            showPrintOverlay();
+          }, 500);
+        }
       }
-    });
+
+      function cancelHold() {
+        if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      }
+
+      btnPause.addEventListener('mousedown', onDown);
+      btnPause.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(e); }, { passive: false });
+      btnPause.addEventListener('mouseup', cancelHold);
+      btnPause.addEventListener('touchend', (e) => { e.preventDefault(); cancelHold(); }, { passive: false });
+      btnPause.addEventListener('mouseleave', cancelHold);
+      btnPause.addEventListener('touchcancel', cancelHold);
+
+      btnPause.addEventListener('click', () => {
+        if (wasHeld) { wasHeld = false; return; }
+        beep();
+        const now = Date.now();
+        const isDoubleClick = (now - pauseBtnLastClick) < 400;
+        pauseBtnLastClick = now;
+
+        if (state.paused && isDoubleClick) {
+          speakFare();
+        } else if (state.paused && state.extras > 0) {
+          state.fare += state.extras;
+          state.extras = 0;
+          updateDisplay();
+          saveRide();
+        } else if (!state.paused) {
+          pauseMeter();
+        }
+      });
+    })();
     document.getElementById('btn-lang').addEventListener('click', () => {
       beep();
       if (langIndicatorState === 'default') {
@@ -1123,6 +1440,208 @@
         { timeout: 3000 }
       );
     }
+    // === Receipt Printer ===
+    function generateReceiptText() {
+      const total = Math.round((state.fare + state.extras) * 10) / 10;
+      const elapsed = state.elapsedBeforePause;
+      const totalSec = Math.floor(elapsed / 1000);
+      const min = Math.floor(totalSec / 60);
+      const sec = totalSec % 60;
+      const distKm = (state.distanceM / 1000).toFixed(2);
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-GB', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+      const timeStr = now.toLocaleTimeString('en-GB', {
+        hour: '2-digit', minute: '2-digit'
+      });
+
+      const meterFare = Math.max(0, state.fare - STARTING_FARE);
+
+      const lines = [
+        '================================',
+        '      HK TAXI RECEIPT',
+        '================================',
+        '',
+        '  DLLM Meter    DLM 667 P K',
+        '  License: HK-TAXI-SIM',
+        '',
+        '  Date: ' + dateStr,
+        '  Time: ' + timeStr,
+        '',
+        '--------------------------------',
+        '  Starting Fare:   $' + STARTING_FARE.toFixed(1).padStart(7),
+        '  Metered Fare:    $' + meterFare.toFixed(1).padStart(7),
+        '  Extras:          $' + state.extras.toFixed(1).padStart(7),
+        '--------------------------------',
+        '  TOTAL:           $' + total.toFixed(1).padStart(7),
+        '================================',
+        '',
+        '  Distance:  ' + distKm + ' km',
+        '  Duration:  ' + min + 'm ' + sec.toString().padStart(2, '0') + 's',
+        '',
+        '--------------------------------',
+        '     Thank you for riding!',
+        '        ~ DLLM Meters ~',
+        '================================',
+      ];
+
+      return lines.join('\n');
+    }
+
+    function showPrintOverlay() {
+      const overlay = document.getElementById('printer-overlay');
+      const paperTrack = overlay.querySelector('.printer-paper-track');
+      const receiptContent = document.getElementById('receipt-content');
+      const paper = document.getElementById('receipt-paper');
+      const tearHint = document.getElementById('tear-hint');
+
+      // Generate receipt
+      receiptContent.textContent = generateReceiptText();
+
+      // Reset state
+      paperTrack.classList.remove('printing');
+      paperTrack.style.maxHeight = '0';
+      paper.classList.remove('tearing');
+      paper.style.transform = '';
+      paper.style.opacity = '';
+      paper.style.transition = '';
+      tearHint.style.display = 'none';
+      overlay.classList.remove('hidden');
+
+      // Start paper feed after brief delay
+      setTimeout(() => {
+        paperTrack.classList.add('printing');
+      }, 300);
+
+      // Show tear hint after paper finishes printing
+      setTimeout(() => {
+        tearHint.style.display = 'block';
+      }, 3400);
+    }
+
+    function hidePrintOverlay() {
+      const overlay = document.getElementById('printer-overlay');
+      const paperTrack = overlay.querySelector('.printer-paper-track');
+      paperTrack.classList.remove('printing');
+      paperTrack.style.maxHeight = '0';
+      document.getElementById('tear-hint').style.display = 'none';
+      overlay.classList.add('hidden');
+    }
+
+    function showReceiptView() {
+      const view = document.getElementById('receipt-view');
+      const finalEl = document.getElementById('receipt-final');
+      finalEl.textContent = generateReceiptText();
+      view.classList.remove('hidden');
+    }
+
+    function hideReceiptView() {
+      document.getElementById('receipt-view').classList.add('hidden');
+    }
+
+    function saveReceiptAsImage() {
+      const finalEl = document.getElementById('receipt-final');
+      html2canvas(finalEl, {
+        backgroundColor: '#f5f0e8',
+        scale: 2,
+      }).then(function(canvas) {
+        canvas.toBlob(function(blob) {
+          if (navigator.share && navigator.canShare) {
+            const file = new File([blob], 'hk-taxi-receipt.png', { type: 'image/png' });
+            if (navigator.canShare({ files: [file] })) {
+              navigator.share({ files: [file], title: 'HK Taxi Receipt' }).catch(function() {
+                downloadBlob(blob);
+              });
+              return;
+            }
+          }
+          downloadBlob(blob);
+        }, 'image/png');
+      });
+    }
+
+    function downloadBlob(blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'hk-taxi-receipt.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Tear-off gesture
+    (function setupTearGesture() {
+      const paper = document.getElementById('receipt-paper');
+      let startY = 0;
+      let currentY = 0;
+      let dragging = false;
+
+      function onStart(e) {
+        // Only allow tear after paper is fully printed
+        const paperTrack = paper.closest('.printer-paper-track');
+        if (!paperTrack.classList.contains('printing')) return;
+
+        const touch = e.touches ? e.touches[0] : e;
+        startY = touch.clientY;
+        currentY = startY;
+        dragging = true;
+        paper.style.transition = 'none';
+      }
+
+      function onMove(e) {
+        if (!dragging) return;
+        e.preventDefault();
+        const touch = e.touches ? e.touches[0] : e;
+        currentY = touch.clientY;
+        const dy = currentY - startY;
+
+        if (dy < 0) {
+          const clamped = Math.max(dy, -160);
+          paper.style.transform = 'translateY(' + clamped + 'px) rotate(' + (clamped * 0.02) + 'deg)';
+          paper.style.opacity = String(1 + (clamped / 220));
+        }
+      }
+
+      function onEnd() {
+        if (!dragging) return;
+        dragging = false;
+        const dy = currentY - startY;
+
+        if (dy < -80) {
+          // Tear off!
+          paper.classList.add('tearing');
+          paper.addEventListener('animationend', function handler() {
+            paper.removeEventListener('animationend', handler);
+            hidePrintOverlay();
+            paper.classList.remove('tearing');
+            paper.style.transform = '';
+            paper.style.opacity = '';
+            paper.style.transition = '';
+            showReceiptView();
+          });
+        } else {
+          // Snap back
+          paper.style.transition = 'transform 0.3s, opacity 0.3s';
+          paper.style.transform = '';
+          paper.style.opacity = '';
+        }
+      }
+
+      paper.addEventListener('touchstart', onStart, { passive: false });
+      paper.addEventListener('touchmove', onMove, { passive: false });
+      paper.addEventListener('touchend', onEnd);
+      paper.addEventListener('mousedown', onStart);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onEnd);
+    })();
+
+    // Receipt button bindings
+    document.getElementById('printer-close').addEventListener('click', hidePrintOverlay);
+    document.getElementById('btn-save-receipt').addEventListener('click', saveReceiptAsImage);
+    document.getElementById('btn-close-receipt').addEventListener('click', hideReceiptView);
   </script>
 </body>
 </html>
