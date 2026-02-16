@@ -562,6 +562,31 @@
       beepSound.play();
     }
 
+    // === TTS ===
+    let ttsLang = 'yue'; // 'yue' for Cantonese, 'en' for English
+
+    function speakFare() {
+      const total = Math.round((state.fare + state.extras) * 10) / 10;
+      const dollars = Math.floor(total);
+      const cents = Math.round((total - dollars) * 10); // tenths = 角/dime
+
+      let text, lang;
+      if (ttsLang === 'yue') {
+        text = '現在車費是' + dollars + '元';
+        if (cents > 0) text += cents + '角';
+        lang = 'zh-HK';
+      } else {
+        text = 'The current fare is ' + dollars + ' dollar' + (dollars !== 1 ? 's' : '');
+        if (cents > 0) text += ' and ' + (cents * 10) + ' cent' + (cents * 10 !== 1 ? 's' : '');
+        lang = 'en-US';
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+    }
+
     // === Mileage indicator blink ===
     function blinkMileageIndicator() {
       const el = document.getElementById('mileage-indicator');
@@ -703,7 +728,7 @@
         fareDec.textContent = fare.dec;
         setDigitVisibility(fareMain, true);
         setDigitVisibility(fareDec, true);
-        if (state.extras === 0 && !state.running) {
+        if (state.extras === 0) {
           extrasMain.textContent = '0.';
           extrasDec.textContent = '0';
           setDigitVisibility(extrasMain, false);
@@ -954,13 +979,22 @@
         state.extras = 0;
         updateDisplay();
         saveRide();
+      } else if (state.paused) {
+        // Already stopped and no extras — dictate fare
+        speakFare();
       } else {
         pauseMeter();
       }
     });
     document.getElementById('btn-lang').addEventListener('click', () => {
       beep();
-      // Language button — to be defined later
+      ttsLang = ttsLang === 'yue' ? 'en' : 'yue';
+      // Brief spoken confirmation
+      const confirmText = ttsLang === 'yue' ? '廣東話' : 'English';
+      const u = new SpeechSynthesisUtterance(confirmText);
+      u.lang = ttsLang === 'yue' ? 'zh-HK' : 'en-US';
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
     });
     // Hold-to-subtract logic for extras buttons
     function setupExtrasButton(btnId, amount) {
