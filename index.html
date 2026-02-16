@@ -1271,49 +1271,36 @@
       }
     });
 
-    // Pause button: click = pause/merge/speak, long-press while paused = print
+    // Pause button: click = pause/merge, double-click = speak, triple-click = print
     (function() {
       const btnPause = document.getElementById('btn-pause');
-      let pauseBtnLastClick = 0;
-      let holdTimer = null;
-      let wasHeld = false;
-
-      function onDown(e) {
-        wasHeld = false;
-        if (state.paused) {
-          holdTimer = setTimeout(() => {
-            wasHeld = true;
-            beep();
-            showPrintOverlay();
-          }, 500);
-        }
-      }
-
-      function cancelHold() {
-        if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-      }
-
-      btnPause.addEventListener('mousedown', onDown);
-      btnPause.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(e); }, { passive: false });
-      btnPause.addEventListener('mouseup', cancelHold);
-      btnPause.addEventListener('touchend', (e) => { e.preventDefault(); cancelHold(); }, { passive: false });
-      btnPause.addEventListener('mouseleave', cancelHold);
-      btnPause.addEventListener('touchcancel', cancelHold);
+      let clickTimes = [];
 
       btnPause.addEventListener('click', () => {
-        if (wasHeld) { wasHeld = false; return; }
         beep();
         const now = Date.now();
-        const isDoubleClick = (now - pauseBtnLastClick) < 400;
-        pauseBtnLastClick = now;
+        // Keep only clicks within 500ms window
+        clickTimes = clickTimes.filter(t => now - t < 500);
+        clickTimes.push(now);
 
-        if (state.paused && isDoubleClick) {
+        if (state.paused && clickTimes.length >= 3) {
+          // Triple-click while stopped — print receipt
+          clickTimes = [];
+          showPrintOverlay();
+        } else if (state.paused && clickTimes.length === 2) {
+          // Double-click while stopped — announce fare
           speakFare();
-        } else if (state.paused && state.extras > 0) {
-          state.fare += state.extras;
-          state.extras = 0;
-          updateDisplay();
-          saveRide();
+        } else if (state.paused && clickTimes.length === 1 && state.extras > 0) {
+          // Single click while stopped — merge extras
+          setTimeout(() => {
+            // Only merge if no further clicks came
+            if (clickTimes.length === 1) {
+              state.fare += state.extras;
+              state.extras = 0;
+              updateDisplay();
+              saveRide();
+            }
+          }, 500);
         } else if (!state.paused) {
           pauseMeter();
         }
