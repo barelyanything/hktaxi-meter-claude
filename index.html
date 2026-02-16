@@ -215,6 +215,14 @@
       text-shadow: 0 0 12px rgba(255, 20, 20, 0.6), 0 0 24px rgba(255, 20, 20, 0.3);
     }
 
+    .status-cell-lang {
+      position: relative;
+    }
+
+    .status-lang {
+      position: absolute;
+    }
+
     .mileage-indicator {
       width: 20px;
       height: 10px;
@@ -510,7 +518,7 @@
         <div class="status-cell"><span class="status-text" id="status-vacant">VACANT</span></div>
         <div class="status-cell"><span class="status-text" id="status-hired">HIRED</span></div>
         <div class="status-cell"><span class="status-text" id="status-stop">STOP</span></div>
-        <div class="status-cell"></div>
+        <div class="status-cell status-cell-lang"><span class="status-text status-lang" id="status-lang-en">英</span><span class="status-text status-lang" id="status-lang-yue">粵</span></div>
         <div class="status-cell" style="margin-left: 16px;"><div class="mileage-indicator" id="mileage-indicator"></div></div>
         <div class="status-cell"></div>
       </div>
@@ -679,6 +687,9 @@
     const statusVacant = document.getElementById('status-vacant');
     const statusHired = document.getElementById('status-hired');
     const statusStop = document.getElementById('status-stop');
+    const statusLangEn = document.getElementById('status-lang-en');
+    const statusLangYue = document.getElementById('status-lang-yue');
+    let langIndicatorState = 'default'; // 'default' (no light), 'en', 'yue'
     const gpsDot = document.getElementById('gps-dot');
     const gpsText = document.getElementById('gps-text');
     const distanceInfo = document.getElementById('distance-info');
@@ -993,7 +1004,18 @@
     });
     document.getElementById('btn-lang').addEventListener('click', () => {
       beep();
-      ttsLang = ttsLang === 'yue' ? 'en' : 'yue';
+      if (langIndicatorState === 'default') {
+        langIndicatorState = 'en';
+        ttsLang = 'en';
+      } else if (langIndicatorState === 'en') {
+        langIndicatorState = 'yue';
+        ttsLang = 'yue';
+      } else {
+        langIndicatorState = 'en';
+        ttsLang = 'en';
+      }
+      statusLangEn.classList.toggle('active', langIndicatorState === 'en');
+      statusLangYue.classList.toggle('active', langIndicatorState === 'yue');
     });
     // Hold-to-subtract logic for extras buttons
     function setupExtrasButton(btnId, amount) {
