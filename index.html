@@ -240,15 +240,6 @@
       position: relative;
     }
 
-    .control-panel::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 10px;
-      right: 10px;
-      height: 1px;
-      background: #333;
-    }
 
     .meter-btn {
       width: 52px;
@@ -439,7 +430,7 @@
 
 
       .control-panel {
-        margin: 4px 16px 6px;
+        margin: 4px 12px 6px;
         padding: 10px 12px;
       }
 
@@ -975,28 +966,44 @@
     function setupExtrasButton(btnId, amount) {
       const btn = document.getElementById(btnId);
       let holdTimer = null;
+      let repeatInterval = null;
       let held = false;
+
+      function subtractOnce() {
+        if (state.extras > 0) {
+          beep();
+          state.extras = Math.max(0, state.extras - amount);
+          updateDisplay();
+          saveRide();
+        }
+      }
 
       function onDown(e) {
         e.preventDefault();
         held = false;
         holdTimer = setTimeout(() => {
           held = true;
-          if (state.extras > 0) {
-            beep();
-            state.extras = Math.max(0, state.extras - amount);
-            updateDisplay();
-            saveRide();
-          }
+          subtractOnce();
+          repeatInterval = setInterval(() => {
+            subtractOnce();
+          }, 250);
         }, 500);
       }
 
-      function onUp(e) {
-        e.preventDefault();
+      function stopHold() {
         if (holdTimer) {
           clearTimeout(holdTimer);
           holdTimer = null;
         }
+        if (repeatInterval) {
+          clearInterval(repeatInterval);
+          repeatInterval = null;
+        }
+      }
+
+      function onUp(e) {
+        e.preventDefault();
+        stopHold();
         if (!held) {
           beep();
           addExtra(amount);
@@ -1004,10 +1011,7 @@
       }
 
       function onCancel() {
-        if (holdTimer) {
-          clearTimeout(holdTimer);
-          holdTimer = null;
-        }
+        stopHold();
       }
 
       btn.addEventListener('mousedown', onDown);
