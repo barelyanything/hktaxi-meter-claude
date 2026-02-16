@@ -971,30 +971,29 @@
       }
     });
 
+    let pauseBtnLastClick = 0;
     document.getElementById('btn-pause').addEventListener('click', () => {
       beep();
-      if (state.paused && state.extras > 0) {
+      const now = Date.now();
+      const isDoubleClick = (now - pauseBtnLastClick) < 400;
+      pauseBtnLastClick = now;
+
+      if (state.paused && isDoubleClick) {
+        // Double-click while stopped — announce fare
+        speakFare();
+      } else if (state.paused && state.extras > 0) {
         // Already stopped — merge extras into fare and clear extras
         state.fare += state.extras;
         state.extras = 0;
         updateDisplay();
         saveRide();
-      } else if (state.paused) {
-        // Already stopped and no extras — dictate fare
-        speakFare();
-      } else {
+      } else if (!state.paused) {
         pauseMeter();
       }
     });
     document.getElementById('btn-lang').addEventListener('click', () => {
       beep();
       ttsLang = ttsLang === 'yue' ? 'en' : 'yue';
-      // Brief spoken confirmation
-      const confirmText = ttsLang === 'yue' ? '廣東話' : 'English';
-      const u = new SpeechSynthesisUtterance(confirmText);
-      u.lang = ttsLang === 'yue' ? 'zh-HK' : 'en-US';
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
     });
     // Hold-to-subtract logic for extras buttons
     function setupExtrasButton(btnId, amount) {
