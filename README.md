@@ -15,8 +15,8 @@ A web-based Hong Kong taxi meter simulator with a realistic 7-segment LED displa
 - **GPS-based distance tracking** using the browser Geolocation API with jitter filtering
 - **Time-based fare** when stationary (speed < 0.5 m/s)
 - **Extras management** — add extras with $10/$1 buttons; hold to subtract; press STOP again to merge extras into fare
-- **Audio feedback** — beep sound on button presses and fare ticks
-- **TTS fare announcement** — double-click STOP to hear the current fare read aloud in Cantonese or English; toggle language with the 語 button
+- **Audio feedback** — beep sound on button presses and fare ticks; printer sound during receipt printing; tear sound on receipt dismissal
+- **TTS voice lines** — 語 button cycles OFF → Cantonese → English; welcome message on hire; arrival/fare announcement on stop; double-click STOP to re-announce fare
 - **Receipt printer** — triple-click STOP to print a receipt with a 3D animated printing experience:
   - Printer slides in from the bottom of the screen
   - Receipt paper feeds out with a dot-matrix stepping animation
@@ -26,7 +26,7 @@ A web-based Hong Kong taxi meter simulator with a realistic 7-segment LED displa
   - Receipt includes: taxi number, start/end time, total km, paid km, paid minutes, surcharge, total fare
 - **Ride persistence** — current ride state saved to localStorage, survives page refresh
 - **PWA support** — installable on Android/iOS home screen for fullscreen, chromeless experience
-- **Responsive layout** — optimized for both portrait and landscape phone use
+- **Responsive layout** — unified sizing across desktop and mobile; optimized for both portrait and landscape phone use
 
 ## Fare Structure
 
@@ -43,7 +43,7 @@ A web-based Hong Kong taxi meter simulator with a realistic 7-segment LED displa
 | For Hire | 空 | Red | Reset meter (only when stopped) |
 | Hired | 往 | Yellow | Start or resume the meter |
 | Stop | 停/講/印 | Yellow | Single: pause; Double: TTS fare; Triple: print receipt; While stopped: merge extras |
-| Language | 語 | Yellow | Toggle TTS language (Cantonese / English) |
+| Language | 語 | Yellow | Cycle TTS: OFF → Cantonese → English → OFF |
 | +$10 | 附加 $10. | Yellow | Tap to add $10 extras; hold to subtract $10 |
 | +$1 | $1. | Yellow | Tap to add $1 extras; hold to subtract $1 |
 
@@ -91,7 +91,9 @@ For the best experience on a phone:
 
 ```
 ├── index.html       # Main app (HTML + CSS + JS, all-in-one)
-├── beep.mp3         # Button / fare tick audio feedback
+├── beep-2.mp3       # Button / fare tick audio feedback
+├── print.mp3        # Dot-matrix printer sound effect (loops during printing)
+├── tear.mp3         # Paper tear sound effect (on receipt dismiss)
 ├── printer.svg      # Receipt printer graphic
 ├── manifest.json    # PWA manifest for home screen install
 ├── icon-192.png     # App icon (192x192)
@@ -115,11 +117,11 @@ For the best experience on a phone:
 See [TODO.md](TODO.md) for details.
 
 - [x] Print receipt with 3D animated printer experience
-- [x] TTS fare announcement (Cantonese / English)
+- [x] TTS voice lines (welcome, arrival, fare announcement)
 - [x] Web Share API for receipt sharing
+- [x] Matrix printer sound effect
+- [x] Paper tear sound effect
 - [ ] Out of tape handling
-- [ ] Matrix printer sound effect
-- [ ] More accurate beep sound
 - [ ] Onboarding experience
 - [ ] Vehicle license plate display
 - [ ] Taxi driver identity plate
