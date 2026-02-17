@@ -809,15 +809,23 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
     // === Beep ===
-    const beepSound = new Audio('beep.mp3');
-    beepSound.volume = 0.5;
+    const beepSound = new Audio('beep-2.mp3');
+    beepSound.volume = 0.1;
     function beep() {
       beepSound.currentTime = 0;
       beepSound.play();
+      speechSynthesis.cancel();
     }
 
     // === TTS ===
-    let ttsLang = 'yue'; // 'yue' for Cantonese, 'en' for English
+    let ttsLang = 'off'; // 'off', 'yue' for Cantonese, 'en' for English
+
+    function speakText(text, lang) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+    }
 
     function speakFare() {
       const total = Math.round((state.fare + state.extras) * 10) / 10;
@@ -835,10 +843,7 @@
         lang = 'en-US';
       }
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(utterance);
+      speakText(text, lang);
     }
 
     // === Mileage indicator blink ===
@@ -937,7 +942,7 @@
     const statusStop = document.getElementById('status-stop');
     const statusLangEn = document.getElementById('status-lang-en');
     const statusLangYue = document.getElementById('status-lang-yue');
-    let langIndicatorState = 'default'; // 'default' (no light), 'en', 'yue'
+    // langIndicatorState removed — ttsLang ('off'/'yue'/'en') drives indicators directly
     const gpsDot = document.getElementById('gps-dot');
     const gpsText = document.getElementById('gps-text');
     const distanceInfo = document.getElementById('distance-info');
@@ -1228,7 +1233,19 @@
     document.getElementById('btn-hired').addEventListener('click', () => {
       beep();
       if (!state.running) {
+        const wasVacant = !state.paused; // fresh hire vs resume from pause
         startMeter();
+        if (wasVacant && ttsLang !== 'off') {
+          const plateLetters = 'DL';
+          const plateDigits = '9667';
+          if (ttsLang === 'yue') {
+            const spokenDigits = plateDigits.split('').join(' ');
+            speakText('歡迎乘搭本的士 ' + plateLetters + ' ' + spokenDigits + ', 請扣好安全帶', 'zh-HK');
+          } else {
+            const spokenDigits = plateDigits.split('').join(' ');
+            speakText('Welcome to my taxi ' + plateLetters + ' ' + spokenDigits + ', please wear your seatbelt', 'en-US');
+          }
+        }
       }
     });
 
@@ -1254,7 +1271,7 @@
           showPrintOverlay();
         } else if (count === 2) {
           // Double-click — announce fare
-          speakFare();
+          if (ttsLang !== 'off') speakFare();
         } else if (count === 1 && state.extras > 0) {
           // Single click while already stopped — merge extras
           state.fare += state.extras;
@@ -1275,6 +1292,15 @@
         if (!state.paused && clickCount === 1) {
           beep();
           pauseMeter();
+          // Announce arrival when transitioning from HIRED → STOP
+          if (ttsLang !== 'off') {
+            const total = Math.round((state.fare + state.extras) * 10) / 10;
+            if (ttsLang === 'yue') {
+              speakText('你已經到達目的地，總車費係' + total + '蚊，已包括附加費', 'zh-HK');
+            } else {
+              speakText('You have reached the destination, the total fare is ' + total + ' dollars, including surcharge', 'en-US');
+            }
+          }
         }
         // No beep when already stopped
 
@@ -1285,18 +1311,15 @@
     })();
     document.getElementById('btn-lang').addEventListener('click', () => {
       beep();
-      if (langIndicatorState === 'default') {
-        langIndicatorState = 'en';
-        ttsLang = 'en';
-      } else if (langIndicatorState === 'en') {
-        langIndicatorState = 'yue';
+      if (ttsLang === 'off') {
         ttsLang = 'yue';
-      } else {
-        langIndicatorState = 'en';
+      } else if (ttsLang === 'yue') {
         ttsLang = 'en';
+      } else {
+        ttsLang = 'off';
       }
-      statusLangEn.classList.toggle('active', langIndicatorState === 'en');
-      statusLangYue.classList.toggle('active', langIndicatorState === 'yue');
+      statusLangEn.classList.toggle('active', ttsLang === 'en');
+      statusLangYue.classList.toggle('active', ttsLang === 'yue');
     });
     // Hold-to-subtract logic for extras buttons
     function setupExtrasButton(btnId, amount) {
