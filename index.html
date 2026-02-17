@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=960, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#111111">
@@ -56,7 +56,7 @@
       background: #0a0a0a;
       border: 2px solid #222;
       margin: 12px 12px 0 12px;
-      padding: 10px 14px 0;
+      padding: 20px 14px 5px;
       position: relative;
     }
 
@@ -67,14 +67,19 @@
     }
 
     .fare-section, .extras-section {
-      flex: 1;
       position: relative;
       border: 1.5px solid #555;
-      padding: 8px 0 14px 10px;
+      padding: 16px 0 16px 16px;
     }
 
     .fare-section {
+      flex: 1;
       margin-right: 2px;
+    }
+
+    .extras-section {
+      flex: none;
+      width: fit-content;
     }
 
     .section-label {
@@ -139,6 +144,7 @@
 
     .digit-main, .digit-decimal {
       position: relative;
+      display: inline-block;
     }
 
     .digit-decimal {
@@ -154,10 +160,12 @@
       line-height: 1;
     }
 
-    .digit-main .seven-seg-bg, .digit-decimal .seven-seg-bg {
+    /* Background digits (888.) are in-flow and define the container width.
+       Active digits overlay on top, right-aligned. */
+    .digit-main .seven-seg, .digit-decimal .seven-seg {
       position: absolute;
       right: 0;
-      bottom: 0;
+      top: 0;
     }
 
     .seven-seg {
@@ -172,7 +180,7 @@
     .currency-label {
       position: absolute;
       bottom: -9px;
-      left: 10px;
+      left: 33%;
       background: #0a0a0a;
       padding: 0 4px;
       color: #ccc;
@@ -241,19 +249,21 @@
       background: #1a1a1a;
       border-top: 2px solid #222;
       margin: 4px 12px 6px;
-      padding: 10px 12px;
-      display: flex;
-      gap: 0;
-      justify-content: center;
-      align-items: flex-end;
+      padding: 4px 12px 10px;
       position: relative;
+    }
+
+    .btn-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
 
     .meter-btn {
       width: 80px;
       height: 40px;
-      border: 1px solid #222;
+      border: 4px solid rgba(0,0,0,0.3);
       border-radius: 4px;
       cursor: pointer;
       position: relative;
@@ -273,62 +283,501 @@
     }
 
     .btn-yellow {
-      background: linear-gradient(180deg, #ccaa33 0%, #998811 100%);
+      background: linear-gradient(180deg, #f5f0e0 0%, #d9d0b8 100%);
     }
 
     .btn-orange {
       background: linear-gradient(180deg, #cc7733 0%, #995511 100%);
     }
 
-    .btn-label {
-      font-size: 16px;
-      color: #999;
-      text-align: center;
-      margin-bottom: 4px;
-      white-space: nowrap;
-      height: 18px;
-      line-height: 18px;
+    .btn-label-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      background: #000;
+      padding: 4px 0;
+      margin-bottom: 8px;
     }
 
-    .btn-wrapper {
+    .btn-label {
+      font-size: 18px;
+      color: #999;
+      text-align: center;
+      white-space: nowrap;
+      width: 80px;
+      margin: 0 12px;
+    }
+
+    .btn-text {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      pointer-events: none;
+    }
+
+    .btn-red .btn-text {
+      color: #fff;
+    }
+
+    /* Hidden GPS status (kept for JS references) */
+    .debug-info { display: none; }
+
+    /* System controls */
+    .system-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 12px 8px;
+      padding: 4px 0;
+    }
+    .system-controls-right {
+      display: flex;
+      gap: 16px;
+    }
+
+    .sys-btn {
+      background: transparent;
+      border: none;
+      color: #2a2a2a;
+      font-size: 18px;
+      padding: 4px 8px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .sys-btn:active {
+      color: #666;
+    }
+
+    #faremode-icon {
+      opacity: 0.3;
+    }
+
+    /* === License Plate Overlay === */
+    /* ── Reusable modal overlay ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1100;
+      background: rgba(0,0,0,0.88);
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .modal-overlay.hidden { display: none; }
+
+    @keyframes modalCardIn {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes modalChromeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes modalFadeOut {
+      from { opacity: 1; }
+      to   { opacity: 0; }
     }
 
-    /* GPS status */
-    .gps-status {
-      font-size: 9px;
+    .modal-overlay.modal-enter .license-plate,
+    .modal-overlay.modal-enter .driver-card {
+      animation: modalCardIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .modal-overlay.modal-enter .modal-dismiss,
+    .modal-overlay.modal-enter .modal-actions {
+      animation: modalChromeIn 0.3s ease 0.2s both;
+    }
+    .modal-overlay.modal-exit {
+      animation: modalFadeOut 0.25s ease forwards;
+      pointer-events: none;
+    }
+
+    .modal-dismiss {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+    }
+    .modal-dismiss:hover { opacity: 0.7; }
+
+    .modal-title {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      padding: 4px 8px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    .modal-btn:hover { opacity: 1; }
+
+    .license-plate {
+      position: relative;
+      background: #fff;
+      border-radius: 8px;
+      aspect-ratio: 330 / 171;
+      padding: 8px 24px;
+      overflow: hidden;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      min-width: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .plate-corner {
+      position: absolute;
+      top: 8px;
+      font-weight: bold;
       color: #555;
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+    .plate-corner-left  { left: 10px;  text-align: left;  font-size: 8px; }
+    .plate-corner-right { right: 10px; text-align: right; font-size: 11px; }
+
+    .plate-screw {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #e0e0e0, #888);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.4), 0 1px 1px rgba(255,255,255,0.3);
+      top: 28px;
+      transform: none;
+    }
+    .plate-screw::before, .plate-screw::after {
+      content: '';
+      position: absolute;
+      background: rgba(0,0,0,0.35);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .plate-screw::before { width: 6px; height: 1.5px; }
+    .plate-screw::after  { width: 1.5px; height: 6px; }
+    .plate-screw-left  { left: 60px; }
+    .plate-screw-right { right: 60px; }
+
+    .plate-row {
+      font-family: 'Arial Black', 'Helvetica Neue', sans-serif;
+      font-size: 96px;
+      font-weight: 900;
+      color: #111;
+      letter-spacing: 0;
+      line-height: 0.8em;
+    }
+
+    .plate-row:empty { display: none; }
+
+    /* Fare sheet card */
+    .faresheet-card {
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 20px 28px;
+      min-width: 260px;
+      color: #eee;
+      font-size: 13px;
+      line-height: 2;
+    }
+    .faresheet-card table { width: 100%; border-collapse: collapse; }
+    .faresheet-card td { padding: 2px 0; }
+    .faresheet-card td:last-child { text-align: right; color: #fff; font-weight: 600; }
+    .faresheet-card hr { border: none; border-top: 1px solid #333; margin: 8px 0; }
+
+    /* Driver card */
+    /* Driver card */
+    .driver-card {
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      width: 420px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      font-family: Arial, sans-serif;
+    }
+    .driver-card-header {
+      background: #d9711a;
+      color: #fff;
+      padding: 8px 14px;
+      font-size: 18px;
+      font-weight: bold;
       display: flex;
       align-items: center;
-      gap: 3px;
+      justify-content: center;
+      gap: 16px;
     }
-
-    .gps-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: #333;
-    }
-
-    .gps-dot.active {
-      background: #00cc44;
-      box-shadow: 0 0 4px rgba(0, 204, 68, 0.5);
-    }
-
-    .gps-dot.error {
-      background: #cc3333;
-    }
-
-    /* Distance info at bottom */
-    .debug-info {
-      margin: 0 12px 8px;
-      padding: 4px 8px;
-      font-size: 9px;
-      color: #444;
+    .driver-card-body {
       display: flex;
+      padding: 12px 14px 14px;
+      gap: 14px;
+    }
+    .driver-card-info {
+      flex: 1;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      column-gap: 8px;
+      font-family: Georgia, 'Times New Roman', serif;
+      row-gap: 4px;
+      align-items: start;
+    }
+    .driver-card-field-label {
+      font-size: 14px;
+      font-weight: bold;
+      color: #000;
+      white-space: nowrap;
+    }
+    .driver-card-field-value {
+      font-size: 18px;
+      color: #000;
+      font-weight: bold;
+    }
+    .driver-card-field-value.date-value {
+      align-self: center;
+    }
+    .driver-card-field-value.name-zh {
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+    .driver-card-field-value.name-en {
+      font-size: 24px;
+    }
+    .driver-card-spacer {
+      grid-column: 1 / -1;
+      height: 6px;
+    }
+    .driver-card-right {
+      width: 96px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       justify-content: space-between;
+      gap: 8px;
+    }
+    .driver-card-photo-box {
+      width: 96px;
+      height: 116px;
+      background: #c8c8c8;
+      border: 1px solid #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #888;
+      font-size: 10px;
+      overflow: hidden;
+      cursor: default;
+      padding: 0;
+      position: relative;
+    }
+    .driver-card-photo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .driver-card-photo-hint {
+      text-align: center;
+      line-height: 1.6;
+      pointer-events: none;
+    }
+    .driver-card-dept {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .driver-card-dept svg {
+      width: 30px;
+      height: 30px;
+      flex-shrink: 0;
+    }
+    .driver-card-dept-text {
+      font-size: 9px;
+      color: #000;
+      font-weight: bold;
+      line-height: 1.4;
+    }
+
+    /* Settings modal */
+    .settings-card {
+      background: #1c1c1c;
+      border-radius: 10px;
+      overflow: hidden;
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 32px);
+      margin: 16px 0;
+    }
+    .settings-titlebar {
+      background: #2a2a2a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 16px;
+      position: relative;
+      border-bottom: 1px solid #333;
+    }
+    .settings-titlebar-title {
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .settings-titlebar-dismiss {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 6px;
+      line-height: 1;
+      opacity: 0.7;
+    }
+    .settings-titlebar-dismiss:hover { opacity: 1; }
+    .settings-body {
+      padding: 18px 20px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      overflow-y: auto;
+    }
+    .settings-col-left {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .settings-col-right {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100px;
+    }
+    .settings-field { display: flex; flex-direction: column; gap: 6px; }
+    .settings-label { color: #aaa; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; }
+    .settings-input {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 15px;
+      padding: 8px 10px;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+      resize: none;
+      font-family: Arial, sans-serif;
+    }
+    .settings-input:focus { border-color: #888; }
+    .settings-photo-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .settings-photo-label { color: #aaa; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; }
+    .settings-photo-box {
+      width: 100%;
+      background: #333;
+      border: 1px solid #555;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      font-size: 9px;
+      aspect-ratio: 5 / 6;
+    }
+    .settings-photo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .settings-photo-box img.flash-in {
+      animation: photoFlashIn 4s ease-out forwards;
+    }
+    @keyframes photoFlashIn {
+      0%   { filter: brightness(100); }
+      100% { filter: brightness(1); }
+    }
+    .settings-photo-hint { pointer-events: none; text-align: center; line-height: 1.6; }
+    .settings-save-btn {
+      background: #2a2a2a;
+      border: none;
+      border-top: 1px solid #333;
+      border-radius: 0 0 10px 10px;
+      color: #fff;
+      font-size: 14px;
+      padding: 13px;
+      cursor: pointer;
+      width: 100%;
+      display: block;
+    }
+    .settings-save-btn:hover { background: #333; }
+    .settings-photo-btn {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 12px;
+      padding: 7px 6px;
+      cursor: pointer;
+      width: 100%;
+      white-space: nowrap;
+    }
+    .settings-photo-btn:hover { background: #333; border-color: #666; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: #1a6fb5;
+      border: 2px solid #fff;
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      padding: 10px 20px;
+      border-radius: 3px;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      z-index: 2000;
+      white-space: nowrap;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
     /* Portrait phone */
@@ -372,24 +821,6 @@
         width: 100%;
       }
 
-      .fare-section, .extras-section {
-        padding: 12px 0 16px 16px;
-      }
-
-      .debug-info {
-        margin: 0 16px 6px;
-        padding: 4px 12px;
-        font-size: 11px;
-      }
-
-      .gps-status {
-        font-size: 11px;
-      }
-
-      .gps-dot {
-        width: 7px;
-        height: 7px;
-      }
     }
     /* === Receipt Printer Overlay === */
     .printer-overlay {
@@ -621,7 +1052,7 @@
           <div class="section-label">F A R E</div>
           <div class="digit-display">
             <div class="digit-main">
-              <span class="seven-seg-bg">888.</span>
+              <span class="seven-seg-bg">8888.</span>
               <span class="seven-seg" id="fare-main">0.</span>
             </div>
             <div class="digit-decimal">
@@ -659,35 +1090,27 @@
         <div class="status-cell"><span class="status-text" id="status-hired">HIRED</span></div>
         <div class="status-cell"><span class="status-text" id="status-stop">STOP</span></div>
         <div class="status-cell status-cell-lang"><span class="status-text status-lang" id="status-lang-en">英</span><span class="status-text status-lang" id="status-lang-yue">粵</span></div>
-        <div class="status-cell" style="margin-left: 16px;"><div class="mileage-indicator" id="mileage-indicator"></div></div>
+        <div class="status-cell" style="justify-content: flex-end;"><div class="mileage-indicator" id="mileage-indicator"></div></div>
         <div class="status-cell"></div>
       </div>
     </div>
 
     <div class="control-panel">
-      <div class="btn-wrapper">
+      <div class="btn-label-row">
         <div class="btn-label">空</div>
-        <button class="meter-btn btn-red" id="btn-forhire" title="For Hire"></button>
-      </div>
-      <div class="btn-wrapper">
         <div class="btn-label">往</div>
-        <button class="meter-btn btn-yellow" id="btn-hired" title="Hired"></button>
-      </div>
-      <div class="btn-wrapper">
         <div class="btn-label">停/講/印</div>
-        <button class="meter-btn btn-yellow" id="btn-pause" title="Pause"></button>
-      </div>
-      <div class="btn-wrapper">
         <div class="btn-label">語</div>
-        <button class="meter-btn btn-yellow" id="btn-lang" title="Language"></button>
-      </div>
-      <div class="btn-wrapper" style="margin-left: 16px;">
-        <div class="btn-label">附加 $10.</div>
-        <button class="meter-btn btn-yellow" id="btn-add10" title="Add $10 Extra"></button>
-      </div>
-      <div class="btn-wrapper">
+        <div class="btn-label" style="margin-left: 16px;">附加 $10.</div>
         <div class="btn-label">$1.</div>
-        <button class="meter-btn btn-yellow" id="btn-add1" title="Add $1 Extra"></button>
+      </div>
+      <div class="btn-row">
+        <button class="meter-btn btn-red" id="btn-forhire" title="For Hire"><span class="btn-text">空</span></button>
+        <button class="meter-btn btn-yellow" id="btn-hired" title="Hired"><span class="btn-text">往</span></button>
+        <button class="meter-btn btn-yellow" id="btn-pause" title="Pause"><span class="btn-text">停</span></button>
+        <button class="meter-btn btn-yellow" id="btn-lang" title="Language"><span class="btn-text">語</span></button>
+        <button class="meter-btn btn-yellow" id="btn-add10" title="Add $10 Extra" style="margin-left: 16px;"><span class="btn-text">$10.</span></button>
+        <button class="meter-btn btn-yellow" id="btn-add1" title="Add $1 Extra"><span class="btn-text">$1.</span></button>
       </div>
     </div>
 
@@ -699,7 +1122,124 @@
       <span id="distance-info">0.000 km</span>
       <span id="time-info">00:00</span>
     </div>
+    <div class="system-controls">
+      <button class="sys-btn" id="btn-settings" title="設定 Settings"><i class="fa-solid fa-gear"></i></button>
+      <div class="system-controls-right">
+        <button class="sys-btn" id="btn-plate" title="車牌 License Plate"><i class="fa-solid fa-rectangle-ad"></i></button>
+        <button class="sys-btn" id="btn-driver" title="司機 Driver ID"><i class="fa-solid fa-id-card"></i></button>
+        <button class="sys-btn" id="btn-faresheet" title="收費表 Fare Sheet"><i class="fa-solid fa-list"></i></button>
+        <button class="sys-btn" id="btn-faremode" title="收費模式 Fare Mode"><i class="fa-solid fa-car" id="faremode-icon" style="color: #cc3333;"></i></button>
+      </div>
+    </div>
   </div>
+
+  <!-- License Plate Overlay -->
+  <div id="plate-overlay" class="modal-overlay hidden">
+    <button class="modal-dismiss" id="plate-dismiss"><i class="fa-solid fa-xmark"></i></button>
+    <div class="license-plate">
+      <div class="plate-corner plate-corner-left">B.S. FU 167z</div>
+      <div class="plate-corner plate-corner-right">發達車牌</div>
+      <div class="plate-screw plate-screw-left"></div>
+      <div class="plate-screw plate-screw-right"></div>
+      <div class="plate-row" id="plate-row-1">FU</div>
+      <div class="plate-row" id="plate-row-2">1699</div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" id="btn-plate-download"><i class="fa-solid fa-download"></i></button>
+    </div>
+  </div>
+
+  <!-- Driver ID Overlay -->
+  <div id="driver-overlay" class="modal-overlay hidden">
+    <button class="modal-dismiss" id="driver-dismiss"><i class="fa-solid fa-xmark"></i></button>
+    <div class="driver-card">
+      <div class="driver-card-header">
+        <span>的士司機證</span><span>TAXI DRIVER IDENTITY PLATE</span>
+      </div>
+      <div class="driver-card-body">
+        <div class="driver-card-info">
+          <div class="driver-card-field-label">編號 No.：</div>
+          <div class="driver-card-field-value" id="driver-id-value">123456</div>
+          <div class="driver-card-spacer"></div>
+          <div class="driver-card-field-label">姓名：</div>
+          <div class="driver-card-field-value name-zh" id="driver-name-zh">陳的士</div>
+          <div class="driver-card-field-label">Name：</div>
+          <div class="driver-card-field-value name-en" id="driver-name-en">CHAN TAK SHI</div>
+          <div class="driver-card-spacer"></div>
+          <div class="driver-card-field-label">發出日期：<br>Date of Issue：</div>
+          <div class="driver-card-field-value date-value" id="driver-issue-date">06/10/2018</div>
+          <div class="driver-card-field-label">屆滿日期：<br>Date of Expiry：</div>
+          <div class="driver-card-field-value date-value" id="driver-expiry-date">05/10/2028</div>
+        </div>
+        <div class="driver-card-right">
+          <div class="driver-card-photo-box" id="driver-photo-box">
+            <img id="driver-photo-img" src="driver-photo.png" alt="" style="display:block;">
+            <span class="driver-card-photo-hint" style="display:none;">相片<br>photo</span>
+          </div>
+          <input type="file" id="driver-photo-input" accept="image/*" capture="user" style="display:none;">
+          <div class="driver-card-dept">
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="19" fill="#1a8a9a"/>
+              <rect x="18" y="7" width="4" height="26" rx="2" fill="#fff"/>
+              <rect x="7" y="18" width="26" height="4" rx="2" fill="#fff"/>
+              <circle cx="20" cy="20" r="4" fill="#1a8a9a"/>
+            </svg>
+            <div class="driver-card-dept-text">運人署<br>Transhuman<br>Department</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" id="btn-driver-download"><i class="fa-solid fa-download"></i></button>
+    </div>
+  </div>
+
+  <!-- Fare Sheet Overlay -->
+  <div id="faresheet-overlay" class="modal-overlay hidden">
+    <button class="modal-dismiss" id="faresheet-dismiss"><i class="fa-solid fa-xmark"></i></button>
+    <div class="modal-title" id="faresheet-title">收費表</div>
+    <div class="faresheet-card" id="faresheet-content"></div>
+  </div>
+
+  <!-- Settings Overlay -->
+  <div id="settings-overlay" class="modal-overlay hidden">
+    <div class="settings-card">
+      <div class="settings-titlebar">
+        <div class="settings-titlebar-title">設定</div>
+        <button class="settings-titlebar-dismiss" id="settings-dismiss"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="settings-body">
+        <div class="settings-col-left">
+          <div class="settings-field">
+            <div class="settings-label">車牌</div>
+            <textarea class="settings-input" id="settings-plate" rows="2" placeholder="FU&#10;1699" style="line-height:1.5;"></textarea>
+          </div>
+          <div class="settings-field">
+            <div class="settings-label">司機中文姓名</div>
+            <input class="settings-input" id="settings-name-zh" maxlength="10" placeholder="陳的士">
+          </div>
+          <div class="settings-field">
+            <div class="settings-label">Driver English Name</div>
+            <input class="settings-input" id="settings-name-en" maxlength="30" placeholder="CHAN TAK SHI">
+          </div>
+        </div>
+        <div class="settings-col-right">
+          <div class="settings-photo-col">
+            <div class="settings-photo-label">司機照片</div>
+            <div class="settings-photo-box" id="settings-photo-thumb">
+              <img id="settings-photo-preview" src="" alt="" style="display:none;">
+              <span class="settings-photo-hint" id="settings-photo-hint">相片<br>photo</span>
+            </div>
+            <button class="settings-photo-btn" id="btn-settings-photo"><i class="fa-solid fa-camera"></i> 即影即有</button>
+          </div>
+        </div>
+      </div>
+      <button class="settings-save-btn" id="btn-settings-save">儲存</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
 
   <!-- Printer Overlay -->
   <div id="printer-overlay" class="printer-overlay hidden">
@@ -810,11 +1350,28 @@
     };
 
     // === Fare rules ===
-    const STARTING_FARE = 29.0;
-    const STARTING_DISTANCE = 2000;  // meters included in starting fare
-    const DISTANCE_INCREMENT = 200;  // meters per fare tick after starting distance
-    const TIME_INCREMENT = 60000;    // 1 minute in ms
-    const FARE_PER_INCREMENT = 2.1;
+    const FARE_MODES = {
+      urban: {
+        label: '市區', labelEn: 'Urban', color: '#cc3333',
+        startingFare: 29.0, startingDistance: 2000,
+        distanceIncrement: 200, timeIncrement: 60000,
+        farePerIncrement: 2.1, reducedFareThreshold: 102.5, reducedFarePerIncrement: 1.4,
+      },
+      nt: {
+        label: '新界', labelEn: 'N.T.', color: '#33aa33',
+        startingFare: 25.5, startingDistance: 2000,
+        distanceIncrement: 200, timeIncrement: 60000,
+        farePerIncrement: 1.9, reducedFareThreshold: 82.5, reducedFarePerIncrement: 1.4,
+      },
+      lantau: {
+        label: '大嶼山', labelEn: 'Lantau', color: '#3388cc',
+        startingFare: 24.0, startingDistance: 2000,
+        distanceIncrement: 200, timeIncrement: 60000,
+        farePerIncrement: 1.9, reducedFareThreshold: 195.0, reducedFarePerIncrement: 1.6,
+      },
+    };
+    let currentFareMode = 'urban';
+    function getFareRules() { return FARE_MODES[currentFareMode]; }
 
     // === LocalStorage keys ===
     const STORAGE_KEY_RIDE = 'hktaxi_current_ride';
@@ -836,6 +1393,7 @@
           stationarySinceLastTick: state.stationarySinceLastTick,
           elapsedMs: elapsed,
           wasRunning: state.running,
+          fareMode: currentFareMode,
           savedAt: Date.now(),
         };
         localStorage.setItem(STORAGE_KEY_RIDE, JSON.stringify(data));
@@ -981,8 +1539,9 @@
               state.distanceM += dist;
 
               // Only count distance beyond the starting allowance toward fare ticks
-              if (state.distanceM > STARTING_DISTANCE) {
-                const chargeableNew = dist - Math.max(0, STARTING_DISTANCE - prevDistance);
+              const sDistance = getFareRules().startingDistance;
+              if (state.distanceM > sDistance) {
+                const chargeableNew = dist - Math.max(0, sDistance - prevDistance);
                 state.distanceSinceLastTick += chargeableNew;
               }
               state.isMoving = true;
@@ -998,9 +1557,11 @@
           state.lastTimestamp = now;
 
           // Check distance-based fare
-          while (state.distanceSinceLastTick >= DISTANCE_INCREMENT) {
-            state.fare += FARE_PER_INCREMENT;
-            state.distanceSinceLastTick -= DISTANCE_INCREMENT;
+          const dRules = getFareRules();
+          while (state.distanceSinceLastTick >= dRules.distanceIncrement) {
+            const inc = state.fare >= dRules.reducedFareThreshold ? dRules.reducedFarePerIncrement : dRules.farePerIncrement;
+            state.fare += inc;
+            state.distanceSinceLastTick -= dRules.distanceIncrement;
             onFareTick();
           }
 
@@ -1055,9 +1616,11 @@
           state.stationaryMs += dt;
           state.stationarySinceLastTick += dt;
 
-          while (state.stationarySinceLastTick >= TIME_INCREMENT) {
-            state.fare += FARE_PER_INCREMENT;
-            state.stationarySinceLastTick -= TIME_INCREMENT;
+          const tRules = getFareRules();
+          while (state.stationarySinceLastTick >= tRules.timeIncrement) {
+            const inc = state.fare >= tRules.reducedFareThreshold ? tRules.reducedFarePerIncrement : tRules.farePerIncrement;
+            state.fare += inc;
+            state.stationarySinceLastTick -= tRules.timeIncrement;
             onFareTick();
           }
         }
@@ -1083,7 +1646,7 @@
 
       // If fresh start (fare is 0), set starting fare
       if (state.fare === 0) {
-        state.fare = STARTING_FARE;
+        state.fare = getFareRules().startingFare;
       }
 
       state.startTime = Date.now();
@@ -1163,8 +1726,9 @@
         const wasVacant = !state.paused; // fresh hire vs resume from pause
         startMeter();
         if (wasVacant && ttsLang !== 'off') {
-          const plateLetters = 'DL';
-          const plateDigits = '9667';
+          const plateLines   = appSettings.plate.split('\n');
+          const plateLetters = sanitizePlateRow(plateLines[0] || '');
+          const plateDigits  = sanitizePlateRow(plateLines[1] || '');
           if (ttsLang === 'yue') {
             const spokenDigits = plateDigits.split('').join(' ');
             speakText('歡迎乘搭本的士 ' + plateLetters + ' ' + spokenDigits + ', 請扣好安全帶', 'zh-HK');
@@ -1313,7 +1877,298 @@
     setupExtrasButton('btn-add10', 10);
     setupExtrasButton('btn-add1', 1);
 
+    // === Info bar buttons ===
+    document.getElementById('btn-faremode').addEventListener('click', () => {
+      // Only allow fare mode change when vacant
+      if (state.running || state.paused) {
+        showToast('結束行程後才可更改的士類型');
+        return;
+      }
+      const modes = ['urban', 'nt', 'lantau'];
+      const idx = (modes.indexOf(currentFareMode) + 1) % modes.length;
+      currentFareMode = modes[idx];
+      document.getElementById('faremode-icon').style.color = getFareRules().color;
+    });
+
+    // ── Modal helpers ──
+    function openModal(id) {
+      const el = document.getElementById(id);
+      el.classList.remove('hidden');
+      el.classList.remove('modal-enter');
+      void el.offsetWidth; // reflow to restart animation
+      el.classList.add('modal-enter');
+      setTimeout(() => el.classList.remove('modal-enter'), 600);
+    }
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      el.classList.add('modal-exit');
+      setTimeout(() => {
+        el.classList.add('hidden');
+        el.classList.remove('modal-exit');
+      }, 250);
+    }
+    function bindModalClose(overlayId, dismissId) {
+      // Dismiss button (top-right corner of overlay)
+      document.getElementById(dismissId).addEventListener('click', () => {
+        closeModal(overlayId);
+      });
+      // Click directly on the overlay backdrop (not on child content)
+      document.getElementById(overlayId).addEventListener('click', (e) => {
+        if (e.target === document.getElementById(overlayId)) {
+          closeModal(overlayId);
+        }
+      });
+    }
+
+    // ── Plate overlay ──
+    document.getElementById('btn-plate').addEventListener('click', () => openModal('plate-overlay'));
+    bindModalClose('plate-overlay', 'plate-dismiss');
+
+    document.getElementById('btn-plate-download').addEventListener('click', () => {
+      const plate = document.getElementById('plate-overlay').querySelector('.license-plate');
+      html2canvas(plate, { backgroundColor: '#fff', scale: 3 }).then(canvas => {
+        const plateText = (document.getElementById('plate-row-1').textContent +
+                           document.getElementById('plate-row-2').textContent).replace(/\s/g, '');
+        canvas.toBlob(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'plate-' + plateText + '.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 'image/png');
+      });
+    });
+
+    // ── Driver overlay ──
+    document.getElementById('btn-driver').addEventListener('click', () => openModal('driver-overlay'));
+    bindModalClose('driver-overlay', 'driver-dismiss');
+
+    document.getElementById('btn-driver-download').addEventListener('click', () => {
+      const card = document.querySelector('#driver-overlay .driver-card');
+      html2canvas(card, { backgroundColor: '#fff', scale: 3 }).then(canvas => {
+        canvas.toBlob(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'driver-card.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 'image/png');
+      });
+    });
+
+    // ── Fare sheet overlay ──
+    function buildFareSheet() {
+      const r = getFareRules();
+      document.getElementById('faresheet-title').textContent = '收費表 · ' + r.label;
+      document.getElementById('faresheet-content').innerHTML =
+        '<table>' +
+        '<tr><td>起錶</td><td>HK$' + r.startingFare.toFixed(1) + '</td></tr>' +
+        '<tr><td>首程</td><td>' + (r.startingDistance / 1000).toFixed(1) + ' km</td></tr>' +
+        '</table>' +
+        '<hr>' +
+        '<table>' +
+        '<tr><td>每跳距離</td><td>' + r.distanceIncrement + ' m</td></tr>' +
+        '<tr><td>每跳時間</td><td>' + (r.timeIncrement / 1000) + ' 秒</td></tr>' +
+        '<tr><td>每跳收費</td><td>HK$' + r.farePerIncrement.toFixed(1) + '</td></tr>' +
+        '</table>' +
+        '<hr>' +
+        '<table>' +
+        '<tr><td>減費起點</td><td>HK$' + r.reducedFareThreshold.toFixed(1) + '</td></tr>' +
+        '<tr><td>減費後每跳</td><td>HK$' + r.reducedFarePerIncrement.toFixed(1) + '</td></tr>' +
+        '</table>';
+    }
+    document.getElementById('btn-faresheet').addEventListener('click', () => {
+      buildFareSheet();
+      openModal('faresheet-overlay');
+    });
+    bindModalClose('faresheet-overlay', 'faresheet-dismiss');
+
+    // ── App Settings ──
+    const STORAGE_KEY_SETTINGS = 'hktaxi_settings';
+
+    function randomDriverId() {
+      return String(Math.floor(100000 + Math.random() * 900000));
+    }
+    function todayDDMMYYYY() {
+      const d = new Date();
+      const p = n => String(n).padStart(2, '0');
+      return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear();
+    }
+    function addTenYears(ddmmyyyy) {
+      const [dd, mm, yyyy] = ddmmyyyy.split('/');
+      return dd + '/' + mm + '/' + (parseInt(yyyy) + 10);
+    }
+
+    let appSettings = {};
+
+    function loadSettings() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_SETTINGS);
+        if (raw) { appSettings = JSON.parse(raw); }
+      } catch (e) {}
+      if (!appSettings.plate)     appSettings.plate     = 'FU\n1699';
+      if (!appSettings.nameZh)    appSettings.nameZh    = '陳的士';
+      if (!appSettings.nameEn)    appSettings.nameEn    = 'CHAN TAK SHI';
+      if (!appSettings.driverId)  appSettings.driverId  = randomDriverId();
+      if (!appSettings.issueDate) appSettings.issueDate = todayDDMMYYYY();
+      saveSettings();
+      applySettings();
+    }
+
+    function saveSettings() {
+      try { localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(appSettings)); } catch (e) {}
+    }
+
+    function sanitizePlateRow(s) {
+      return s.toUpperCase().replace(/[^A-Z0-9 ]/g, '').slice(0, 8);
+    }
+
+    function applySettings() {
+      // License plate overlay — split on newline for two rows
+      const plateLines = appSettings.plate.split('\n');
+      document.getElementById('plate-row-1').textContent = sanitizePlateRow(plateLines[0] || '');
+      document.getElementById('plate-row-2').textContent = sanitizePlateRow(plateLines[1] || '');
+      // Driver card
+      document.getElementById('driver-id-value').textContent  = appSettings.driverId;
+      document.getElementById('driver-name-zh').textContent   = appSettings.nameZh;
+      document.getElementById('driver-name-en').textContent   = appSettings.nameEn;
+      document.getElementById('driver-issue-date').textContent = appSettings.issueDate;
+      document.getElementById('driver-expiry-date').textContent = addTenYears(appSettings.issueDate);
+    }
+
+    // Toast
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // Settings overlay
+    document.getElementById('btn-settings').addEventListener('click', () => {
+      document.getElementById('settings-plate').value    = appSettings.plate;
+      document.getElementById('settings-name-zh').value = appSettings.nameZh;
+      document.getElementById('settings-name-en').value = appSettings.nameEn;
+      // sync photo preview
+      try {
+        const savedPhoto = localStorage.getItem(STORAGE_KEY_PHOTO);
+        const preview = document.getElementById('settings-photo-preview');
+        const hint    = document.getElementById('settings-photo-hint');
+        const photoSrc = savedPhoto || DEFAULT_PHOTO_SRC;
+        preview.classList.remove('flash-in');
+        preview.src = photoSrc; preview.style.display = 'block';
+        if (hint) hint.style.display = 'none';
+      } catch (e) {}
+      openModal('settings-overlay');
+    });
+    bindModalClose('settings-overlay', 'settings-dismiss');
+
+    // Enforce plate textarea: max 2 lines, max 8 alphanumeric+space chars per line
+    document.getElementById('settings-plate').addEventListener('input', function() {
+      const lines = this.value.split('\n');
+      const clamped = lines.slice(0, 2).map(l => l.replace(/[^A-Za-z0-9 ]/g, '').slice(0, 8));
+      const fixed = clamped.join('\n');
+      if (fixed !== this.value) {
+        const sel = this.selectionStart;
+        this.value = fixed;
+        this.selectionStart = this.selectionEnd = Math.min(sel, fixed.length);
+      }
+    });
+    document.getElementById('settings-plate').addEventListener('keydown', function(e) {
+      // Block third newline
+      if (e.key === 'Enter' && this.value.split('\n').length >= 2) {
+        e.preventDefault();
+      }
+    });
+
+    document.getElementById('btn-settings-photo').addEventListener('click', () => {
+      document.getElementById('driver-photo-input').click();
+    });
+
+    document.getElementById('btn-settings-save').addEventListener('click', () => {
+      const plateLines = document.getElementById('settings-plate').value.split('\n');
+      const row1 = sanitizePlateRow(plateLines[0] || '');
+      const row2 = sanitizePlateRow(plateLines[1] || '');
+      const rawPlate = row2 ? row1 + '\n' + row2 : row1;
+      appSettings.plate  = rawPlate  || 'FU\n1699';
+      const rawZh = document.getElementById('settings-name-zh').value.trim();
+      appSettings.nameZh = rawZh     || '陳的士';
+      const rawEn = document.getElementById('settings-name-en').value.trim().toUpperCase();
+      appSettings.nameEn = rawEn     || 'CHAN TAK SHI';
+      saveSettings();
+      applySettings();
+      closeModal('settings-overlay');
+      showToast('設定已儲存');
+    });
+
+    // ── Driver photo ──
+    const STORAGE_KEY_PHOTO = 'hktaxi_driver_photo';
+
+    const DEFAULT_PHOTO_SRC = 'driver-photo.png';
+
+    function setDriverPhoto(src, animate) {
+      const img = document.getElementById('driver-photo-img');
+      const cardHint = document.querySelector('.driver-card-photo-hint');
+      img.src = src;
+      img.style.display = 'block';
+      if (cardHint) cardHint.style.display = 'none';
+      // update settings preview
+      const preview = document.getElementById('settings-photo-preview');
+      const settingsHint = document.getElementById('settings-photo-hint');
+      if (preview) {
+        preview.src = src;
+        preview.style.display = 'block';
+        if (settingsHint) settingsHint.style.display = 'none';
+        preview.classList.remove('flash-in');
+        if (animate) {
+          void preview.offsetWidth; // reflow to restart animation
+          preview.classList.add('flash-in');
+        }
+      }
+    }
+
+    function loadDriverPhoto() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_PHOTO);
+        if (saved) { setDriverPhoto(saved); return; }
+      } catch (e) {}
+      // Fall back to default bundled photo (no animation on initial load)
+      const img = document.getElementById('driver-photo-img');
+      const cardHint = document.querySelector('.driver-card-photo-hint');
+      const preview = document.getElementById('settings-photo-preview');
+      const settingsHint = document.getElementById('settings-photo-hint');
+      img.src = DEFAULT_PHOTO_SRC;
+      img.style.display = 'block';
+      if (cardHint) cardHint.style.display = 'none';
+      if (preview) { preview.src = DEFAULT_PHOTO_SRC; preview.style.display = 'block'; }
+      if (settingsHint) settingsHint.style.display = 'none';
+    }
+
+    // Photo upload only via settings modal
+
+    document.getElementById('driver-photo-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target.result;
+        setDriverPhoto(dataUrl, true);
+        try { localStorage.setItem(STORAGE_KEY_PHOTO, dataUrl); } catch (err) {}
+        showToast('相片已更新 Photo updated');
+      };
+      reader.readAsDataURL(file);
+    });
+
     // === Init ===
+    loadSettings();
+    loadDriverPhoto();
+
     // Restore saved ride if any
     (function restoreSavedRide() {
       const saved = loadRide();
@@ -1325,6 +2180,12 @@
         state.stationaryMs = saved.stationaryMs || 0;
         state.distanceSinceLastTick = saved.distanceSinceLastTick || 0;
         state.stationarySinceLastTick = saved.stationarySinceLastTick || 0;
+
+        // Restore fare mode
+        if (saved.fareMode && FARE_MODES[saved.fareMode]) {
+          currentFareMode = saved.fareMode;
+          document.getElementById('faremode-icon').style.color = getFareRules().color;
+        }
 
         // Account for time elapsed while the page was closed
         const timeSinceSave = Date.now() - (saved.savedAt || Date.now());
@@ -1342,6 +2203,7 @@
     updateDisplay();
     updateTimeDisplay();
     updateStatusIndicators();
+    showToast('設定已儲存');
 
     // Attempt initial GPS check
     if (navigator.geolocation) {
@@ -1386,7 +2248,7 @@
       const total = Math.round((state.fare + state.extras) * 10) / 10;
       const elapsed = state.elapsedBeforePause;
       const distKm = (state.distanceM / 1000).toFixed(2);
-      const paidKm = Math.max(0, (state.distanceM - STARTING_DISTANCE) / 1000).toFixed(2);
+      const paidKm = Math.max(0, (state.distanceM - getFareRules().startingDistance) / 1000).toFixed(2);
       const paidMin = (state.stationaryMs / 60000).toFixed(2);
 
       const pad2 = n => n.toString().padStart(2, '0');
@@ -1403,7 +2265,7 @@
       const dash = '-'.repeat(W);
 
       const lines = [
-        rl('車牌', 'TAXI NO.', 'DL9667'),
+        rl('車牌', 'TAXI NO.', appSettings.plate.replace('\n', ' ')),
         rl('上車', 'START', fmtDT(startTime)),
         rl('下車', 'END', fmtDT(endTime)),
         rl('總公里', 'TOTAL KM', distKm),
@@ -1543,7 +2405,7 @@
     }
 
     function getReceiptFilename() {
-      const plate = 'DL9667';
+      const plate = appSettings.plate;
       const elapsed = state.elapsedBeforePause;
       const startTime = new Date(Date.now() - elapsed);
       const pad2 = n => n.toString().padStart(2, '0');
